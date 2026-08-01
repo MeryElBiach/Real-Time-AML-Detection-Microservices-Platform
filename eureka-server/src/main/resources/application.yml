@@ -1,0 +1,15 @@
+server:
+  port: 8761
+
+spring:
+  application:
+    name: eureka-server
+
+eureka:
+  client:
+#    Eureka ne s'enregistre pas lui-même, il EST l'annuaire
+    register-with-eureka: false
+#    il n'a pas besoin de récupérer la liste des services d'un autre Eureka (il n'y en a qu'un seul)
+    fetch-registry: false
+  instance:
+    hostname: localhost
