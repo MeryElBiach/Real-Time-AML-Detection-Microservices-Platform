@@ -10,28 +10,40 @@ eureka:
 spring:
   cloud:
     gateway:
-      discovery:
-        locator:
-          enabled: true
-          lower-case-service-id: true
-      routes:
-        - id: transaction-service
-          uri: lb://transaction-service
-          predicates:
-            - Path=/api/transactions/**
-          filters:
-            - StripPrefix=2
+      server:
+        webflux:
+          discovery:
+            locator:
+              enabled: true
+              lower-case-service-id: true
+          routes:
+            - id: transaction-service
+              uri: lb://transaction-service
+              predicates:
+                - Path=/api/transactions/**
+              filters:
+                - StripPrefix=2
 
-        - id: scoring-service
-          uri: lb://scoring-service
-          predicates:
-            - Path=/api/scoring/**
-          filters:
-            - StripPrefix=2
+            - id: scoring-service
+              uri: lb://scoring-service
+              predicates:
+                - Path=/api/scoring/**
+              filters:
+                - StripPrefix=2
 
-        - id: alerts-service
-          uri: lb://alerts-service
-          predicates:
-            - Path=/api/alerts/**
-          filters:
-            - StripPrefix=2
+            - id: alerts-service
+              uri: lb://alerts-service
+              predicates:
+                - Path=/api/alerts/**
+              filters:
+                - StripPrefix=2
+
+            - id: auth-service
+              uri: lb://auth-service
+              predicates:
+                - Path=/api/auth/**
+              filters:
+                - StripPrefix=1
+app:
+  jwt:
+    secret: ${JWT_SECRET}

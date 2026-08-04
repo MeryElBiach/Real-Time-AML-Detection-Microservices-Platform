@@ -25,7 +25,9 @@ Thumbs.db
 # Environment files
 # ===========================
 .env
+**/.env
 .env.*
+!.env.example
 
 # ===========================
 # Secrets
