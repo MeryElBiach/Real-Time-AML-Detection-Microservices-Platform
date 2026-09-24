@@ -1,0 +1,37 @@
+server:
+  port: 8085
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+  instance:
+    prefer-ip-address: true
+
+spring:
+  kafka:
+    bootstrap-servers: kafka:9092
+    consumer:
+      group-id: reporting-service-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+        spring.json.value.default.type: com.meryem.aml.reportingservice.model.Alert
+        spring.json.use.type.headers: false
+
+  datasource:
+    url: jdbc:postgresql://postgres:5432/aml_db?currentSchema=reporting_schema
+    driver-class-name: org.postgresql.Driver
+    username: aml_user
+    password: aml_password
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+    
+      hibernate:
+        default_schema: reporting_schema
+    show-sql: true

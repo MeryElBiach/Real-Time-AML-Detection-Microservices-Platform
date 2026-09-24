@@ -4,9 +4,10 @@ server:
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://eureka-server:8761/eureka/
   instance:
     prefer-ip-address: true
+
 spring:
   cloud:
     gateway:
@@ -16,27 +17,44 @@ spring:
             locator:
               enabled: true
               lower-case-service-id: true
+
+          globalcors:
+            add-to-simple-url-handler-mapping: true
+            cors-configurations:
+              '[/**]':
+                allowedOrigins:
+                  - "http://localhost:5173"
+                allowedMethods:
+                  - GET
+                  - POST
+                  - PUT
+                  - DELETE
+                  - OPTIONS
+                allowedHeaders:
+                  - "*"
+                allowCredentials: true
+
           routes:
             - id: transaction-service
               uri: lb://transaction-service
               predicates:
                 - Path=/api/transactions/**
               filters:
-                - StripPrefix=2
+                - StripPrefix=1
 
             - id: scoring-service
               uri: lb://scoring-service
               predicates:
                 - Path=/api/scoring/**
               filters:
-                - StripPrefix=2
+                - StripPrefix=1
 
             - id: alerts-service
               uri: lb://alerts-service
               predicates:
                 - Path=/api/alerts/**
               filters:
-                - StripPrefix=2
+                - StripPrefix=1
 
             - id: auth-service
               uri: lb://auth-service
@@ -44,6 +62,14 @@ spring:
                 - Path=/api/auth/**
               filters:
                 - StripPrefix=1
+
+            - id: reporting-service
+              uri: lb://reporting-service
+              predicates:
+                - Path=/api/reports/**
+              filters:
+                - StripPrefix=1
+
 app:
   jwt:
     secret: ${JWT_SECRET}

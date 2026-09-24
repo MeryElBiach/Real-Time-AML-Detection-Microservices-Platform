@@ -4,13 +4,13 @@ server:
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://eureka-server:8761/eureka/
   instance:
     prefer-ip-address: true
 
 spring:
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: kafka:9092
     consumer:
       group-id: alerts-service-group
       auto-offset-reset: earliest
@@ -20,9 +20,14 @@ spring:
         spring.json.trusted.packages: "*"
         spring.json.value.default.type: com.meryem.aml.alertsservice.model.ScoredTransaction
         spring.json.use.type.headers: false
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
 
   datasource:
-    url: jdbc:postgresql://localhost:5433/aml_db?currentSchema=alert_schema
+    url: jdbc:postgresql://postgres:5432/aml_db?currentSchema=alert_schema
     driver-class-name: org.postgresql.Driver
     username: aml_user
     password: aml_password
