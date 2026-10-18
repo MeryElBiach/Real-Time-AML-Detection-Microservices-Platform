@@ -18,7 +18,7 @@ The project demonstrates how a microservices architecture and event-driven commu
 
 **Note:** This is an educational project that uses simulated transaction data. It is not a production-grade AML compliance solution.
 
-## ✨ Key Features
+##  Key Features
 
 - **Transaction Monitoring:** Process and monitor simulated banking transactions.
 - **Risk Scoring:** Evaluate transactions using predefined AML rules.
@@ -83,7 +83,7 @@ Kafka topics used in the project include:
 - Spring Cloud Config Server
 - Git and GitHub
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### Prerequisites
 
@@ -142,7 +142,7 @@ If the default ports are used:
 
 Actual ports depend on the project configuration.
 
-## 🧪 Testing
+##  Testing
 
 The repository includes scripts for testing browser behavior and replaying alerts. Run them according to the instructions and dependencies defined in the project.
 
@@ -154,13 +154,13 @@ For example, the repository contains:
 
 Refer to the project configuration for the exact commands and required environment variables.
 
-## 🔐 Configuration
+##  Configuration
 
 Configure the necessary environment variables and service settings before running the application.
 
 Do not commit passwords, API keys, JWT secrets, or other sensitive credentials. Use local environment files and ensure they are excluded from version control.
 
-## 🎯 Project Objectives
+##  Project Objectives
 
 This project explores:
 
@@ -178,7 +178,7 @@ This project explores:
 - A risk score is an indicator for further review, not proof of money laundering.
 - Production use would require stronger security, auditability, monitoring, regulatory alignment, and more advanced detection methods.
 
-## 👩‍💻 Author
+## 👩 Author
 
 **Meryem El Biach**
 
