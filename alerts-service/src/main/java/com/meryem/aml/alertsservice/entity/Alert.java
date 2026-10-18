@@ -6,6 +6,8 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Column;
+import jakarta.persistence.Version;
 
 import java.time.LocalDateTime;
 
@@ -27,6 +29,14 @@ public class Alert {
 
     @Enumerated(EnumType.STRING)
     private AlertStatus status;
+
+    @Version
+    @Column(nullable = false, columnDefinition = "bigint default 0")
+    private long statusVersion;
+
+    public long getStatusVersion() {
+        return statusVersion;
+    }
 
     public Alert() {
     }

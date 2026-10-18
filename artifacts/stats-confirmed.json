@@ -1,0 +1,141 @@
+{
+  "totalAlerts": 15255,
+  "alertsByRule": {
+    "STRUCTURING_PATTERN": 3117,
+    "HIGH_AMOUNT": 6855,
+    "RISK_COUNTRY": 5283
+  },
+  "alertsByCountry": {
+    "MA": 9972,
+    "KP": 1758,
+    "SY": 1743,
+    "IR": 1782
+  },
+  "averageRiskScore": 53.46312684365782,
+  "highRiskAlerts": 15255,
+  "riskScoreDistribution": {
+    "80-100": 0,
+    "50-64": 15255,
+    "65-79": 0,
+    "0-49": 0
+  },
+  "timeSeries": [
+    {
+      "date": "01 Aug",
+      "alerts": 194
+    },
+    {
+      "date": "02 Aug",
+      "alerts": 1118
+    },
+    {
+      "date": "03 Aug",
+      "alerts": 167
+    },
+    {
+      "date": "04 Aug",
+      "alerts": 3668
+    },
+    {
+      "date": "07 Aug",
+      "alerts": 1229
+    },
+    {
+      "date": "08 Aug",
+      "alerts": 240
+    },
+    {
+      "date": "19 Sep",
+      "alerts": 2976
+    },
+    {
+      "date": "20 Sep",
+      "alerts": 2062
+    },
+    {
+      "date": "23 Sep",
+      "alerts": 1608
+    },
+    {
+      "date": "24 Sep",
+      "alerts": 1498
+    },
+    {
+      "date": "25 Sep",
+      "alerts": 495
+    }
+  ],
+  "statusDistribution": {
+    "PENDING": 15254,
+    "CONFIRMED": 1,
+    "FALSE_POSITIVE": 0
+  },
+  "statusTimeSeries": [
+    {
+      "date": "01 Aug",
+      "pending": 193,
+      "confirmed": 1,
+      "falsePositive": 0
+    },
+    {
+      "date": "02 Aug",
+      "pending": 1118,
+      "confirmed": 0,
+      "falsePositive": 0
+    },
+    {
+      "date": "03 Aug",
+      "pending": 167,
+      "confirmed": 0,
+      "falsePositive": 0
+    },
+    {
+      "date": "04 Aug",
+      "pending": 3668,
+      "confirmed": 0,
+      "falsePositive": 0
+    },
+    {
+      "date": "07 Aug",
+      "pending": 1229,
+      "confirmed": 0,
+      "falsePositive": 0
+    },
+    {
+      "date": "08 Aug",
+      "pending": 240,
+      "confirmed": 0,
+      "falsePositive": 0
+    },
+    {
+      "date": "19 Sep",
+      "pending": 2976,
+      "confirmed": 0,
+      "falsePositive": 0
+    },
+    {
+      "date": "20 Sep",
+      "pending": 2062,
+      "confirmed": 0,
+      "falsePositive": 0
+    },
+    {
+      "date": "23 Sep",
+      "pending": 1608,
+      "confirmed": 0,
+      "falsePositive": 0
+    },
+    {
+      "date": "24 Sep",
+      "pending": 1498,
+      "confirmed": 0,
+      "falsePositive": 0
+    },
+    {
+      "date": "25 Sep",
+      "pending": 495,
+      "confirmed": 0,
+      "falsePositive": 0
+    }
+  ]
+}

@@ -15,9 +15,12 @@ public class ScoredTransactionConsumer {
     private static final int ALERT_THRESHOLD = 50;
 
     private final AlertRepository alertRepository;
+    private final AlertPublisher alertPublisher;
 
-    public ScoredTransactionConsumer(AlertRepository alertRepository) {
+    public ScoredTransactionConsumer(AlertRepository alertRepository,
+                                     AlertPublisher alertPublisher) {
         this.alertRepository = alertRepository;
+        this.alertPublisher = alertPublisher;
     }
 
     @KafkaListener(topics = "scored-transactions", groupId = "alerts-service-group")
@@ -36,7 +39,7 @@ public class ScoredTransactionConsumer {
         alert.setTriggeredRules(String.join(",", scoredTransaction.getTriggeredRules()));
         alert.setCreatedAt(LocalDateTime.now());
         alert.setStatus(AlertStatus.PENDING);
-
-        alertRepository.save(alert);
+        Alert saved = alertRepository.save(alert);
+        alertPublisher.publish(saved);
     }
 }

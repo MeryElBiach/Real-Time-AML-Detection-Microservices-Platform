@@ -1,0 +1,203 @@
+{
+  "rules": [
+    {
+      "code": "HIGH_AMOUNT",
+      "name": "High Transaction Amount",
+      "condition": "amount >= 100000",
+      "scoreContribution": 50,
+      "description": "Identifies transactions reaching the high amount threshold.",
+      "status": "Active",
+      "simulationNote": "Indicateur standard de volume élevé nécessitant une vérification de la provenance des fonds."
+    },
+    {
+      "code": "STRUCTURING_PATTERN",
+      "name": "Potential Structuring Threshold",
+      "condition": "amount == 9900",
+      "scoreContribution": 50,
+      "description": "Simulation indicator for a transaction just below the reporting threshold; not proof of structuring.",
+      "status": "Active",
+      "simulationNote": "Simulation simplifiée d'un indicateur de structuring sous le seuil réglementaire de 10 000. Ne constitue pas à lui seul la preuve d'un fractionnement délibéré."
+    },
+    {
+      "code": "RISK_COUNTRY",
+      "name": "Jurisdiction Risk Indicator",
+      "condition": "country in [IR, KP, SY]",
+      "scoreContribution": 60,
+      "description": "Identifies jurisdictions included in the engine's simulation risk list, not an official regulatory list.",
+      "status": "Active",
+      "simulationNote": "Liste simulée pour le prototype technique. Ne constitue pas une liste officielle ou réglementaire d'instances gouvernementales."
+    },
+    {
+      "code": "ROUND_AMOUNT",
+      "name": "Round Amount Heuristic",
+      "condition": "amount >= 10000 AND amount % 5000 == 0",
+      "scoreContribution": 15,
+      "description": "Identifies unusually round transaction amounts.",
+      "status": "Active",
+      "simulationNote": "Indicateur statistique d'arrondi fréquent dans les schémas non commerciaux sans justificatif d'achat."
+    },
+    {
+      "code": "FOREIGN_CURRENCY",
+      "name": "Cross-Border / Foreign Currency",
+      "condition": "currency in [EUR, GBP, USD]",
+      "scoreContribution": 20,
+      "description": "Identifies transactions using a foreign currency configured in the engine.",
+      "status": "Active",
+      "simulationNote": "Indicateur complémentaire de risque de change et flux transfrontaliers. Une transaction en devise n'est évidemment pas nécessairement suspecte."
+    }
+  ],
+  "examples": [
+    {
+      "amount": 125000,
+      "currency": "MAD",
+      "country": "MA",
+      "riskScore": 65,
+      "triggeredRules": [
+        "HIGH_AMOUNT",
+        "ROUND_AMOUNT"
+      ],
+      "ruleEvaluations": [
+        {
+          "code": "HIGH_AMOUNT",
+          "triggered": true,
+          "contribution": 50
+        },
+        {
+          "code": "STRUCTURING_PATTERN",
+          "triggered": false,
+          "contribution": 0
+        },
+        {
+          "code": "RISK_COUNTRY",
+          "triggered": false,
+          "contribution": 0
+        },
+        {
+          "code": "ROUND_AMOUNT",
+          "triggered": true,
+          "contribution": 15
+        },
+        {
+          "code": "FOREIGN_CURRENCY",
+          "triggered": false,
+          "contribution": 0
+        }
+      ]
+    },
+    {
+      "amount": 9900,
+      "currency": "MAD",
+      "country": "MA",
+      "riskScore": 50,
+      "triggeredRules": [
+        "STRUCTURING_PATTERN"
+      ],
+      "ruleEvaluations": [
+        {
+          "code": "HIGH_AMOUNT",
+          "triggered": false,
+          "contribution": 0
+        },
+        {
+          "code": "STRUCTURING_PATTERN",
+          "triggered": true,
+          "contribution": 50
+        },
+        {
+          "code": "RISK_COUNTRY",
+          "triggered": false,
+          "contribution": 0
+        },
+        {
+          "code": "ROUND_AMOUNT",
+          "triggered": false,
+          "contribution": 0
+        },
+        {
+          "code": "FOREIGN_CURRENCY",
+          "triggered": false,
+          "contribution": 0
+        }
+      ]
+    },
+    {
+      "amount": 50000,
+      "currency": "USD",
+      "country": "IR",
+      "riskScore": 95,
+      "triggeredRules": [
+        "RISK_COUNTRY",
+        "ROUND_AMOUNT",
+        "FOREIGN_CURRENCY"
+      ],
+      "ruleEvaluations": [
+        {
+          "code": "HIGH_AMOUNT",
+          "triggered": false,
+          "contribution": 0
+        },
+        {
+          "code": "STRUCTURING_PATTERN",
+          "triggered": false,
+          "contribution": 0
+        },
+        {
+          "code": "RISK_COUNTRY",
+          "triggered": true,
+          "contribution": 60
+        },
+        {
+          "code": "ROUND_AMOUNT",
+          "triggered": true,
+          "contribution": 15
+        },
+        {
+          "code": "FOREIGN_CURRENCY",
+          "triggered": true,
+          "contribution": 20
+        }
+      ]
+    },
+    {
+      "amount": 125000,
+      "currency": "USD",
+      "country": "IR",
+      "riskScore": 100,
+      "triggeredRules": [
+        "HIGH_AMOUNT",
+        "RISK_COUNTRY",
+        "ROUND_AMOUNT",
+        "FOREIGN_CURRENCY"
+      ],
+      "ruleEvaluations": [
+        {
+          "code": "HIGH_AMOUNT",
+          "triggered": true,
+          "contribution": 50
+        },
+        {
+          "code": "STRUCTURING_PATTERN",
+          "triggered": false,
+          "contribution": 0
+        },
+        {
+          "code": "RISK_COUNTRY",
+          "triggered": true,
+          "contribution": 60
+        },
+        {
+          "code": "ROUND_AMOUNT",
+          "triggered": true,
+          "contribution": 15
+        },
+        {
+          "code": "FOREIGN_CURRENCY",
+          "triggered": true,
+          "contribution": 20
+        }
+      ]
+    }
+  ],
+  "browserErrors": [],
+  "browser": "passed"
+}

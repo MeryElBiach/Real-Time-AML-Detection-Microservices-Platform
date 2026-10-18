@@ -4,15 +4,16 @@ server:
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://eureka-server:8761/eureka/
   instance:
     prefer-ip-address: true
 
 spring:
   kafka:
-    bootstrap-servers: localhost:9092
-    producer:
+    bootstrap-servers: kafka:9092 # c'est l'adresse à laquelle il va se connecter à Kafka
+    producer: # il configre le producteur
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       properties:
-        spring.json.add.type.headers: false
+        spring.json.add.type.headers: false # il n'ajoute pas d'entêtes JSON
+        
