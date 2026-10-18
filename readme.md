@@ -2,7 +2,7 @@
 
 ## 🎬 Demo
 
-**Watch the application demo:** [View the AML Platform Demo](YOUR_VIDEO_LINK_HERE)
+**Watch the application demo:** [View the AML Platform Demo](https://github.com/MeryElBiach/Real-Time-AML-Detection-Microservices-Platform/issues/3#issue-5908715241)
 
 This video demonstrates the main features of the platform, including transaction monitoring, risk scoring, automated alert generation, and reporting.
 
