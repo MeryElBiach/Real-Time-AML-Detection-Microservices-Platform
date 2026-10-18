@@ -1,9 +1,12 @@
 FROM eclipse-temurin:17-jdk-alpine AS build
 WORKDIR /app
-COPY .mvn/ .mvn
-COPY mvnw pom.xml ./
+COPY reporting-service/.mvn/ .mvn
+COPY reporting-service/mvnw ./
+COPY aml-contracts /contracts
+RUN ./mvnw -f /contracts/pom.xml install -DskipTests -B
+COPY reporting-service/pom.xml ./
 RUN ./mvnw dependency:go-offline -B
-COPY src ./src
+COPY reporting-service/src ./src
 RUN ./mvnw clean package -DskipTests
 
 FROM eclipse-temurin:17-jre-alpine

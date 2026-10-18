@@ -1,7 +1,9 @@
 import React from "react";
+import type { AMLRuleDefinition } from "../types";
 
 interface RuleBadgeProps {
   code: string;
+  definition?: AMLRuleDefinition;
   size?: "sm" | "md";
   showTooltip?: boolean;
 }
@@ -52,7 +54,7 @@ const RULE_METADATA: Record<
   },
 };
 
-export const RuleBadge: React.FC<RuleBadgeProps> = ({ code, size = "sm" }) => {
+export const RuleBadge: React.FC<RuleBadgeProps> = ({ code, size = "sm", definition }) => {
   const meta = RULE_METADATA[code] || {
     label: code,
     score: "",
@@ -62,19 +64,22 @@ export const RuleBadge: React.FC<RuleBadgeProps> = ({ code, size = "sm" }) => {
     description: code,
   };
 
+  const score = definition ? `+${definition.scoreContribution}` : meta.score;
+  const description = definition?.condition ?? meta.description;
+
   const isSmall = size === "sm";
 
   return (
     <span
       id={`rule-badge-${code}`}
-      title={meta.description}
+      title={description}
       className={`inline-flex items-center gap-1 font-mono font-medium rounded border ${meta.bg} ${meta.text} ${meta.border} ${
         isSmall ? "px-1.5 py-0.5 text-[11px]" : "px-2 py-1 text-xs"
       }`}
     >
       <span>{meta.label}</span>
-      {meta.score && (
-        <span className="opacity-70 text-[10px]">({meta.score})</span>
+      {score && (
+        <span className="opacity-70 text-[10px]">({score})</span>
       )}
     </span>
   );

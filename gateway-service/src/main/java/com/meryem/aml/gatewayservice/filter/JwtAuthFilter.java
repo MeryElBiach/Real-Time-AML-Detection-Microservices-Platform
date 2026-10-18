@@ -31,6 +31,7 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
     // ce qui est explicitement listé.
     private static final List<RoleRule> ROLE_RULES = List.of(
             new RoleRule(HttpMethod.PUT, "^/api/alerts/[^/]+/status$", Set.of("ANALYST", "ADMIN")),
+            new RoleRule(HttpMethod.GET, "^/api/reports/stats$", Set.of("ANALYST", "AUDITOR", "ADMIN")),
             new RoleRule(HttpMethod.GET, "^/api/reports/.*$", Set.of("AUDITOR", "ADMIN"))
     );
 

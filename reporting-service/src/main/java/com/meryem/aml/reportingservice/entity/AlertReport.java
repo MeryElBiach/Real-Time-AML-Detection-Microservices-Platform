@@ -4,6 +4,10 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Column;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import com.meryem.aml.alertsservice.entity.AlertStatus;
 
 import java.time.LocalDateTime;
 
@@ -20,6 +24,22 @@ public class AlertReport {
     private int riskScore;
     private String triggeredRules;
     private LocalDateTime createdAt;
+
+    @Column(unique = true)
+    private Long alertId;
+
+    @Column(nullable = false, columnDefinition = "bigint default 0")
+    private long statusVersion;
+
+    @Enumerated(EnumType.STRING)
+    private AlertStatus status;
+
+    public Long getAlertId() { return alertId; }
+    public void setAlertId(Long alertId) { this.alertId = alertId; }
+    public long getStatusVersion() { return statusVersion; }
+    public void setStatusVersion(long statusVersion) { this.statusVersion = statusVersion; }
+    public AlertStatus getStatus() { return status; }
+    public void setStatus(AlertStatus status) { this.status = status; }
 
     public AlertReport() {
     }

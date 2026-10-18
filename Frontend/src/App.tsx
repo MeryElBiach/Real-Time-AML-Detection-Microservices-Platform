@@ -8,7 +8,7 @@ import type {
 
 import { MOCK_USER } from "./data/mockData";
 
-import { getAlerts } from "./api/alertsApi";
+import { getAlerts, updateAlertStatus } from "./api/alertsApi";
 import { getReportStats } from "./api/reportsApi";
 
 import { Sidebar } from "./components/Sidebar";
@@ -47,6 +47,7 @@ export default function App() {
 
   // Loading State
   const [isLoading, setIsLoading] = useState(false);
+  const [dataError, setDataError] = useState<string | null>(null);
 
   // Investigation Drawer State
   const [selectedAlert, setSelectedAlert] = useState<Alert | null>(null);
@@ -57,6 +58,7 @@ export default function App() {
 
     const loadData = async () => {
       setIsLoading(true);
+      setDataError(null);
 
       try {
         const [alertsData, statsData] = await Promise.all([
@@ -68,6 +70,7 @@ export default function App() {
         setStats(statsData);
       } catch (error) {
         console.error("Failed to load AML data:", error);
+        setDataError("Unable to load AML data. Please refresh.");
       } finally {
         setIsLoading(false);
       }
@@ -79,6 +82,7 @@ export default function App() {
   // Refresh data from the backend
   const handleRefresh = async () => {
     setIsLoading(true);
+    setDataError(null);
 
     try {
       const [alertsData, statsData] = await Promise.all([
@@ -90,31 +94,41 @@ export default function App() {
       setStats(statsData);
     } catch (error) {
       console.error("Failed to refresh AML data:", error);
+      setDataError("Unable to refresh AML data.");
     } finally {
       setIsLoading(false);
     }
   };
 
   // Status update handler for investigation workflow
-  const handleUpdateStatus = (
-    alertId: number,
-    newStatus: AlertStatus
-  ) => {
-    setAlerts((prevAlerts) =>
-      prevAlerts.map((alert) =>
-        alert.id === alertId
-          ? { ...alert, status: newStatus }
-          : alert
-      )
-    );
-
-    // Keep selectedAlert in sync if open
-    setSelectedAlert((prev) =>
-      prev && prev.id === alertId
-        ? { ...prev, status: newStatus }
-        : prev
-    );
+  const handleUpdateStatus = async (alertId: number, newStatus: AlertStatus) => {
+    const saved = await updateAlertStatus(alertId, newStatus);
+    setAlerts((previous) => previous.map((alert) =>
+      alert.id === alertId ? { ...alert, ...saved } : alert
+    ));
+    // Keep selectedAlert in sync if open, only after backend confirmation.
+    setSelectedAlert((previous) => previous?.id === alertId
+      ? { ...previous, ...saved } : previous);
   };
+
+  // Kafka is asynchronous: keep reading the Reporting projection after decisions.
+  useEffect(() => {
+    if (!currentUser) return;
+    let active = true;
+    let timer: ReturnType<typeof setTimeout>;
+    const refreshStats = async () => {
+      try {
+        const nextStats = await getReportStats();
+        if (active) setStats(nextStats);
+      } catch (error) {
+        console.error("Failed to synchronize reporting:", error);
+      } finally {
+        if (active) timer = setTimeout(refreshStats, 3000);
+      }
+    };
+    timer = setTimeout(refreshStats, 1000);
+    return () => { active = false; clearTimeout(timer); };
+  }, [currentUser]);
 
   // Add investigation note handler
   const handleAddNote = (alertId: number, noteText: string) => {
@@ -182,9 +196,9 @@ export default function App() {
     },
 
     rules: {
-      title: "AML Rules Engine",
+      title: "AML Rules",
       subtitle:
-        "Detection heuristics catalog and interactive simulation scoring workbench",
+        "Review active rules and test transaction risk scores",
     },
   };
 
@@ -289,6 +303,9 @@ export default function App() {
           {/* Alerts */}
           {currentTab === "alerts" && (
             <AlertsPage
+              alerts={alerts}
+              isLoading={isLoading}
+              error={dataError}
               onSelectAlert={(alert) =>
                 setSelectedAlert(alert)
               }
@@ -318,6 +335,7 @@ export default function App() {
 
       {/* Alert Investigation Detail Drawer */}
       <AlertDetailDrawer
+        key={selectedAlert?.id ?? "closed"}
         alert={selectedAlert}
         isOpen={Boolean(selectedAlert)}
         onClose={() => setSelectedAlert(null)}

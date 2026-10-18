@@ -24,7 +24,7 @@ interface AlertDetailDrawerProps {
   alert: Alert | null;
   isOpen: boolean;
   onClose: () => void;
-  onUpdateStatus: (alertId: number, newStatus: AlertStatus) => void;
+  onUpdateStatus: (alertId: number, newStatus: AlertStatus) => Promise<void>;
   onAddNote: (alertId: number, noteText: string) => void;
 }
 
@@ -38,15 +38,28 @@ export const AlertDetailDrawer: React.FC<AlertDetailDrawerProps> = ({
   const [newNoteText, setNewNoteText] = useState("");
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
 
+  const [isSaving, setIsSaving] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+
   if (!isOpen || !alert) return null;
 
   const ruleCodes = alert.triggeredRules.split(",").map((r) => r.trim()).filter(Boolean);
   const isSimulationRiskCountry = SIMULATION_RISK_COUNTRIES.includes(alert.country);
 
-  const handleStatusChange = (status: AlertStatus) => {
-    onUpdateStatus(alert.id, status);
-    setActionSuccess(`Status updated to ${status}`);
-    setTimeout(() => setActionSuccess(null), 3000);
+  const handleStatusChange = async (status: AlertStatus) => {
+    if (isSaving) return;
+    setIsSaving(true);
+    setActionSuccess(null);
+    setActionError(null);
+    try {
+      await onUpdateStatus(alert.id, status);
+      setActionSuccess(`Status updated to ${status}`);
+      setTimeout(() => setActionSuccess(null), 3000);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "Status update failed");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleAddNoteSubmit = (e: React.FormEvent) => {
@@ -98,7 +111,13 @@ export const AlertDetailDrawer: React.FC<AlertDetailDrawerProps> = ({
         {actionSuccess && (
           <div className="bg-emerald-500/10 border-b border-emerald-500/20 px-6 py-2 text-xs text-emerald-400 flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4" />
-            <span>{actionSuccess} (Local Prototype State)</span>
+            <span>{actionSuccess}</span>
+          </div>
+        )}
+
+        {actionError && (
+          <div role="alert" className="bg-red-500/10 border-b border-red-500/20 px-6 py-2 text-xs text-red-400">
+            {actionError}
           </div>
         )}
 
@@ -254,6 +273,7 @@ export const AlertDetailDrawer: React.FC<AlertDetailDrawerProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               <button
                 id="btn-mark-confirmed"
+                disabled={isSaving}
                 onClick={() => handleStatusChange("CONFIRMED")}
                 className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-xs font-semibold border transition-all ${
                   alert.status === "CONFIRMED"
@@ -267,6 +287,7 @@ export const AlertDetailDrawer: React.FC<AlertDetailDrawerProps> = ({
 
               <button
                 id="btn-mark-false-positive"
+                disabled={isSaving}
                 onClick={() => handleStatusChange("FALSE_POSITIVE")}
                 className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-xs font-semibold border transition-all ${
                   alert.status === "FALSE_POSITIVE"
@@ -280,6 +301,7 @@ export const AlertDetailDrawer: React.FC<AlertDetailDrawerProps> = ({
 
               <button
                 id="btn-revert-pending"
+                disabled={isSaving}
                 onClick={() => handleStatusChange("PENDING")}
                 className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-xs font-semibold border transition-all ${
                   alert.status === "PENDING"

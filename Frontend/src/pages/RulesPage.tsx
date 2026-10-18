@@ -1,11 +1,12 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
     BookOpen,
     CheckCircle2,
     Calculator,
     Info,
 } from "lucide-react";
-import { AML_RULES, SIMULATION_RISK_COUNTRIES } from "../data/mockData";
+import { getRules, evaluateTransaction } from "../api/scoringApi";
+import type { AMLRuleDefinition, EvaluationResponse } from "../types";
 
 import { RuleBadge } from "../components/RuleBadge";
 import { RiskScoreBadge } from "../components/RiskScoreBadge";
@@ -16,39 +17,34 @@ export const RulesPage: React.FC = () => {
     const [testCurrency, setTestCurrency] = useState<string>("MAD");
     const [testCountry, setTestCountry] = useState<string>("MA");
 
-    // Evaluate which rules trigger based on current inputs
-    const evaluationResults = AML_RULES.map((rule) => {
-        let triggered = false;
-        switch (rule.code) {
-            case "HIGH_AMOUNT":
-                triggered = testAmount >= 100000;
-                break;
-            case "STRUCTURING_PATTERN":
-                triggered = testAmount === 9900;
-                break;
-            case "RISK_COUNTRY":
-                triggered = SIMULATION_RISK_COUNTRIES.includes(testCountry.toUpperCase());
-                break;
-            case "ROUND_AMOUNT":
-                triggered = testAmount >= 10000 && testAmount % 5000 === 0;
-                break;
-            case "FOREIGN_CURRENCY":
-                triggered = ["EUR", "USD", "GBP"].includes(testCurrency.toUpperCase());
-                break;
-        }
-        return {
-            rule,
-            triggered,
-            contribution: triggered ? rule.scoreContribution : 0,
-        };
-    });
+    const [rules, setRules] = useState<AMLRuleDefinition[]>([]);
+    const [evaluation, setEvaluation] = useState<EvaluationResponse | null>(null);
+    const [rulesError, setRulesError] = useState<string | null>(null);
+    const [evaluationError, setEvaluationError] = useState<string | null>(null);
 
-    const totalCalculatedScore = Math.min(
-        100,
-        evaluationResults.reduce((acc, curr) => acc + curr.contribution, 0)
-    );
+    useEffect(() => {
+        const controller = new AbortController();
+        getRules(controller.signal).then(setRules).catch(() => {
+            if (!controller.signal.aborted) setRulesError("Rules could not be loaded. Refresh the page to try again.");
+        });
+        return () => controller.abort();
+    }, []);
 
-    const isAlertThresholdReached = totalCalculatedScore >= 50;
+    useEffect(() => {
+        const controller = new AbortController();
+        setEvaluation(null);
+        setEvaluationError(null);
+        const timer = setTimeout(() => {
+            evaluateTransaction({ amount: testAmount, currency: testCurrency, country: testCountry }, controller.signal)
+                .then((result) => { if (!controller.signal.aborted) setEvaluation(result); })
+                .catch(() => { if (!controller.signal.aborted) setEvaluationError("Unable to evaluate these details. Check the amount, currency and country, then try again."); });
+        }, 250);
+        return () => { clearTimeout(timer); controller.abort(); };
+    }, [testAmount, testCurrency, testCountry]);
+
+    const evaluationResults = evaluation?.ruleEvaluations ?? [];
+    const totalCalculatedScore = evaluation?.riskScore;
+    const isAlertThresholdReached = totalCalculatedScore !== undefined && totalCalculatedScore >= 50;
 
     return (
         <div className="p-6 lg:p-8 space-y-8 max-w-7xl mx-auto">
@@ -56,10 +52,10 @@ export const RulesPage: React.FC = () => {
             <div>
                 <h2 className="text-xl font-bold tracking-tight text-white flex items-center gap-2.5">
                     <BookOpen className="w-5 h-5 text-blue-400" />
-                    <span>AML Rules Engine</span>
+                    <span>AML Rules</span>
                 </h2>
                 <p className="text-xs text-slate-400 mt-1">
-                    Standardized detection heuristics, scoring contributions, and simulated risk triggers
+                    Review the active rules and test how they affect a transaction's risk score.
                 </p>
             </div>
 
@@ -67,11 +63,12 @@ export const RulesPage: React.FC = () => {
             <div className="p-4 rounded-xl bg-blue-950/20 border border-blue-800/30 text-xs text-slate-300 leading-relaxed space-y-2">
                 <div className="flex items-center gap-2 text-blue-400 font-semibold">
                     <Info className="w-4 h-4" />
-                    <span>Compliance Scoring Methodology</span>
+                    <span>How scoring works</span>
                 </div>
                 <p>
-                    Le moteur de détection AML évalue chaque transaction entrante selon les 5 règles prédéfinies ci-dessous.
-                    Chaque règle déclenchée contribue au <strong>Risk Score (0 à 100)</strong>. Dès que le score cumulé atteint ou dépasse le seuil de <strong>50</strong>, une alerte est automatiquement enregistrée pour revue par un analyste de conformité.
+                    Each matching rule adds points to the <strong>risk score</strong>, up to a maximum of <strong>100</strong>.
+                    In transaction monitoring, a score of <strong>50 or more</strong> creates an alert for review.
+                    A rule match is a reason to investigate, not a finding of money laundering.
                 </p>
             </div>
 
@@ -79,16 +76,16 @@ export const RulesPage: React.FC = () => {
             <section className="space-y-4">
                 <div className="flex items-center justify-between">
                     <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                        Active AML Rule Catalog (5 Rules)
+                        Rule catalog ({rules.length})
                     </h3>
                     <span className="text-xs text-emerald-400 font-medium flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                        All 5 Rules Active in Engine
+                        {rules.length ? `${rules.filter((rule) => rule.status === "Active").length} active rules` : rulesError || "Loading rules..."}
                     </span>
                 </div>
 
                 <div className="grid grid-cols-1 gap-4">
-                    {AML_RULES.map((rule, idx) => (
+                    {rules.map((rule, idx) => (
                         <div
                             key={rule.code}
                             id={`rule-definition-${rule.code}`}
@@ -99,7 +96,7 @@ export const RulesPage: React.FC = () => {
                                     <span className="text-xs font-mono font-bold text-slate-400 w-5">
                                         0{idx + 1}
                                     </span>
-                                    <RuleBadge code={rule.code} size="md" />
+                                    <RuleBadge code={rule.code} size="md" definition={rule} />
                                     <span className="text-sm font-bold text-white">
                                         {rule.name}
                                     </span>
@@ -107,7 +104,7 @@ export const RulesPage: React.FC = () => {
 
                                 <div className="flex items-center gap-3">
                                     <span className="font-mono text-xs font-bold text-amber-300 bg-amber-950/50 border border-amber-800/40 px-2.5 py-1 rounded">
-                                        Score Contribution: +{rule.scoreContribution}
+                                        Risk score: +{rule.scoreContribution}
                                     </span>
                                     <span className="text-xs font-medium text-emerald-400 bg-emerald-950/40 border border-emerald-800/40 px-2.5 py-1 rounded">
                                         {rule.status}
@@ -118,7 +115,7 @@ export const RulesPage: React.FC = () => {
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 text-xs">
                                 <div className="p-3 rounded-lg bg-slate-950/60 border border-slate-800/80">
                                     <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
-                                        Condition Logique
+                                        Trigger condition
                                     </div>
                                     <div className="font-mono text-blue-300 font-medium">
                                         {rule.condition}
@@ -127,7 +124,7 @@ export const RulesPage: React.FC = () => {
 
                                 <div className="p-3 rounded-lg bg-slate-950/60 border border-slate-800/80 md:col-span-2">
                                     <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
-                                        Description & Objectif Métier
+                                        About this rule
                                     </div>
                                     <div className="text-slate-200">
                                         {rule.description}
@@ -150,14 +147,14 @@ export const RulesPage: React.FC = () => {
                     <div>
                         <h3 className="text-sm font-bold text-white tracking-tight flex items-center gap-2">
                             <Calculator className="w-4 h-4 text-blue-400" />
-                            <span>Interactive Rule Simulation Evaluator</span>
+                            <span>Test a transaction</span>
                         </h3>
                         <p className="text-xs text-slate-400 mt-0.5">
-                            Simulate a custom transaction to test scoring behavior across the 5 AML heuristics
+                            Change the details below to see the score and matching rules. This test does not create a transaction or an alert.
                         </p>
                     </div>
                     <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-blue-950/80 text-blue-300 border border-blue-800/40">
-                        Analyst Workbench
+                        Test mode
                     </span>
                 </div>
 
@@ -165,7 +162,7 @@ export const RulesPage: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                         <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                            Transaction Amount
+                            Amount
                         </label>
                         <input
                             type="number"
@@ -180,21 +177,21 @@ export const RulesPage: React.FC = () => {
                                 onClick={() => setTestAmount(9900)}
                                 className="text-[10px] px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono"
                             >
-                                9,900 (Structuring)
+                                9,900
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setTestAmount(125000)}
                                 className="text-[10px] px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono"
                             >
-                                125,000 (High Amt)
+                                125,000
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setTestAmount(15000)}
                                 className="text-[10px] px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono"
                             >
-                                15,000 (Round)
+                                15,000
                             </button>
                         </div>
                     </div>
@@ -208,29 +205,29 @@ export const RulesPage: React.FC = () => {
                             onChange={(e) => setTestCurrency(e.target.value)}
                             className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
                         >
-                            <option value="MAD">MAD (Domestic Currency)</option>
-                            <option value="EUR">EUR (Foreign Currency - +20)</option>
-                            <option value="USD">USD (Foreign Currency - +20)</option>
-                            <option value="GBP">GBP (Foreign Currency - +20)</option>
+                            <option value="MAD">MAD - Moroccan dirham</option>
+                            <option value="EUR">EUR - Euro</option>
+                            <option value="USD">USD - US dollar</option>
+                            <option value="GBP">GBP - British pound</option>
                         </select>
                     </div>
 
                     <div>
                         <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                            Country Jurisdiction
+                            Country
                         </label>
                         <select
                             value={testCountry}
                             onChange={(e) => setTestCountry(e.target.value)}
                             className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
                         >
-                            <option value="MA">MA - Morocco (Standard)</option>
-                            <option value="FR">FR - France (Standard)</option>
-                            <option value="ES">ES - Spain (Standard)</option>
-                            <option value="GB">GB - United Kingdom (Standard)</option>
-                            <option value="KP">KP - North Korea (Simulated Risk Country - +60)</option>
-                            <option value="IR">IR - Iran (Simulated Risk Country - +60)</option>
-                            <option value="SY">SY - Syria (Simulated Risk Country - +60)</option>
+                            <option value="MA">MA - Morocco</option>
+                            <option value="FR">FR - France</option>
+                            <option value="ES">ES - Spain</option>
+                            <option value="GB">GB - United Kingdom</option>
+                            <option value="KP">KP - North Korea</option>
+                            <option value="IR">IR - Iran</option>
+                            <option value="SY">SY - Syria</option>
                         </select>
                     </div>
                 </div>
@@ -240,34 +237,38 @@ export const RulesPage: React.FC = () => {
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
                         <div>
                             <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                                Simulated Output Result
+                                Test result
                             </span>
                             <div className="flex items-center gap-2 mt-1">
                                 <span className="text-2xl font-bold font-mono text-white">
-                                    Risk Score: {totalCalculatedScore} / 100
+                                    Risk Score: {totalCalculatedScore ?? "..."} / 100
                                 </span>
-                                {isAlertThresholdReached ? (
+                                {evaluation ? (isAlertThresholdReached ? (
                                     <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/30">
-                                        Generates AML Alert (Score &ge; 50)
+                                        Alert threshold reached
                                     </span>
                                 ) : (
                                     <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700">
-                                        Below Alert Threshold (Score &lt; 50)
+                                        Below alert threshold
+                                    </span>
+                                )) : (
+                                    <span role={evaluationError ? "alert" : "status"} className="text-xs text-slate-400">
+                                        {evaluationError || "Calculating score..."}
                                     </span>
                                 )}
                             </div>
                         </div>
-                        <RiskScoreBadge score={totalCalculatedScore} size="md" />
+                        {totalCalculatedScore !== undefined && <RiskScoreBadge score={totalCalculatedScore} size="md" />}
                     </div>
 
                     <div className="space-y-2">
                         <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                            Rule Trigger Status For This Test Scenario:
+                            Results by rule
                         </span>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 pt-1">
-                            {evaluationResults.map(({ rule, triggered, contribution }) => (
+                            {evaluationResults.map(({ code, triggered, contribution }) => (
                                 <div
-                                    key={rule.code}
+                                    key={code}
                                     className={`p-2.5 rounded-lg border text-xs flex items-center justify-between ${triggered
                                             ? "bg-amber-500/10 border-amber-500/30 text-amber-300"
                                             : "bg-slate-900/40 border-slate-800/80 text-slate-400"
@@ -279,7 +280,7 @@ export const RulesPage: React.FC = () => {
                                         ) : (
                                             <span className="w-4 h-4 rounded-full border border-slate-700 flex-shrink-0" />
                                         )}
-                                        <span className="font-mono text-xs">{rule.code}</span>
+                                        <span className="font-mono text-xs">{code}</span>
                                     </div>
                                     <span className="font-mono font-bold">
                                         {triggered ? `+${contribution}` : "0"} pts

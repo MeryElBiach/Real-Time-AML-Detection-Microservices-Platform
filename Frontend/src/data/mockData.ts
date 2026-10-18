@@ -1,4 +1,4 @@
-import type { Alert, AMLRuleDefinition, StatsResponse, UserSession } from "../types";
+import type { Alert, AMLRuleDefinition, UserSession } from "../types";
 
 export const MOCK_USER: UserSession = {
   email: "compliance@sentinel-aml.com",
@@ -316,55 +316,9 @@ export const INITIAL_ALERTS: Alert[] = [
   },
 ];
 
-export const MOCK_STATS: StatsResponse = {
-  totalAlerts: 248,
-  pendingAlerts: 37,
-  averageRiskScore: 67.4,
-  alertsToday: 14,
-  alertsByRule: {
-    HIGH_AMOUNT: 82,
-    STRUCTURING_PATTERN: 54,
-    RISK_COUNTRY: 71,
-    ROUND_AMOUNT: 31,
-    FOREIGN_CURRENCY: 26,
-  },
-  alertsByCountry: {
-    MA: 86,
-    FR: 52,
-    ES: 38,
-    AE: 34,
-    GB: 23,
-    KP: 15,
-  },
-};
-
 export const MOCK_SCORE_DISTRIBUTION = [
   { range: "0 - 49 (Below Threshold)", label: "< 50", count: 18, category: "Below Alert Threshold", color: "#64748b" },
   { range: "50 - 64 (Moderate Elevated)", label: "50-64", count: 96, category: "Elevated Risk", color: "#f59e0b" },
   { range: "65 - 79 (High Elevated)", label: "65-79", count: 72, category: "Elevated Risk", color: "#ea580c" },
   { range: "80 - 100 (High Risk)", label: "80-100", count: 62, category: "High Risk", color: "#ef4444" },
-];
-
-export const MOCK_STATUS_DISTRIBUTION = [
-  { status: "PENDING", label: "Pending Investigation", count: 37, percentage: 14.9, color: "#f59e0b" },
-  { status: "CONFIRMED", label: "Confirmed AML Alert", count: 142, percentage: 57.3, color: "#ef4444" },
-  { status: "FALSE_POSITIVE", label: "Resolved False Positive", count: 69, percentage: 27.8, color: "#10b981" },
-];
-
-export const MOCK_TIME_SERIES = [
-  { date: "05 Sep", alerts: 8, confirmed: 4, falsePositive: 2, pending: 2 },
-  { date: "06 Sep", alerts: 11, confirmed: 6, falsePositive: 3, pending: 2 },
-  { date: "07 Sep", alerts: 9, confirmed: 5, falsePositive: 3, pending: 1 },
-  { date: "08 Sep", alerts: 14, confirmed: 8, falsePositive: 4, pending: 2 },
-  { date: "09 Sep", alerts: 12, confirmed: 7, falsePositive: 3, pending: 2 },
-  { date: "10 Sep", alerts: 7, confirmed: 4, falsePositive: 2, pending: 1 },
-  { date: "11 Sep", alerts: 16, confirmed: 10, falsePositive: 4, pending: 2 },
-  { date: "12 Sep", alerts: 13, confirmed: 7, falsePositive: 4, pending: 2 },
-  { date: "13 Sep", alerts: 10, confirmed: 5, falsePositive: 3, pending: 2 },
-  { date: "14 Sep", alerts: 15, confirmed: 9, falsePositive: 4, pending: 2 },
-  { date: "15 Sep", alerts: 12, confirmed: 6, falsePositive: 4, pending: 2 },
-  { date: "16 Sep", alerts: 18, confirmed: 11, falsePositive: 4, pending: 3 },
-  { date: "17 Sep", alerts: 15, confirmed: 8, falsePositive: 4, pending: 3 },
-  { date: "18 Sep", alerts: 19, confirmed: 10, falsePositive: 5, pending: 4 },
-  { date: "19 Sep", alerts: 14, confirmed: 7, falsePositive: 3, pending: 4 },
 ];

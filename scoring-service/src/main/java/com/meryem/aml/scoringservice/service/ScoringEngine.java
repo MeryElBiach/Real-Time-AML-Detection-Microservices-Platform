@@ -21,6 +21,42 @@ public class ScoringEngine {
     private static final Set<String> FOREIGN_CURRENCIES =
             Set.of("EUR", "USD", "GBP");
 
+    private static final double ROUND_MINIMUM = 10000;
+    private static final double ROUND_MULTIPLE = 5000;
+    private static final int HIGH_AMOUNT_POINTS = 50;
+    private static final int STRUCTURING_POINTS = 50;
+    private static final int RISK_COUNTRY_POINTS = 60;
+    private static final int ROUND_AMOUNT_POINTS = 15;
+    private static final int FOREIGN_CURRENCY_POINTS = 20;
+
+    public record RuleDefinition(String code, String name, String condition,
+                                 int scoreContribution, String description, String status, String simulationNote) {}
+
+    public List<RuleDefinition> getRules() {
+        return List.of(
+            new RuleDefinition("HIGH_AMOUNT", "High amount",
+                "amount >= " + (long) HIGH_AMOUNT_THRESHOLD, HIGH_AMOUNT_POINTS,
+                "Flags transactions at or above the configured amount threshold.", "Active",
+                "The threshold applies to the entered amount; this rule does not convert currencies."),
+            new RuleDefinition("STRUCTURING_PATTERN", "Structuring indicator",
+                "amount == " + (long) STRUCTURING_AMOUNT, STRUCTURING_POINTS,
+                "Matches the exact amount configured for this test rule.", "Active",
+                "This rule checks a single transaction. It does not detect a pattern across multiple transfers."),
+            new RuleDefinition("RISK_COUNTRY", "Country risk",
+                "country in " + RISK_COUNTRIES.stream().sorted().toList(), RISK_COUNTRY_POINTS,
+                "Flags transactions whose country appears in the configured risk list.", "Active",
+                "This is a demonstration list, not an official sanctions list."),
+            new RuleDefinition("ROUND_AMOUNT", "Round amount",
+                "amount >= " + (long) ROUND_MINIMUM + " AND amount % " + (long) ROUND_MULTIPLE + " == 0", ROUND_AMOUNT_POINTS,
+                "Flags round amounts that meet the minimum and multiple shown in the condition.", "Active",
+                "This rule checks the amount only; it does not assess the purpose of the payment."),
+            new RuleDefinition("FOREIGN_CURRENCY", "Foreign currency",
+                "currency in " + FOREIGN_CURRENCIES.stream().sorted().toList(), FOREIGN_CURRENCY_POINTS,
+                "Flags transactions in one of the configured foreign currencies.", "Active",
+                "Currency alone does not indicate a cross-border transfer or suspicious activity.")
+        );
+    }
+
     public ScoredTransaction score(Transaction transaction) {
 
         // Cette liste contient les règles qui ont été déclenchées
@@ -36,7 +72,7 @@ public class ScoringEngine {
         // un indicateur de risque lié au montant.
         if (transaction.getAmount() >= HIGH_AMOUNT_THRESHOLD) {
             triggeredRules.add("HIGH_AMOUNT");
-            score += 50;
+            score += HIGH_AMOUNT_POINTS;
         }
 
         // Règle 2 : pattern de structuring.
@@ -44,7 +80,7 @@ public class ScoringEngine {
         // à 9 900 est utilisée comme indicateur de structuring.
         if (transaction.getAmount() == STRUCTURING_AMOUNT) {
             triggeredRules.add("STRUCTURING_PATTERN");
-            score += 50;
+            score += STRUCTURING_POINTS;
         }
 
         // Règle 3 : pays à risque.
@@ -52,17 +88,17 @@ public class ScoringEngine {
         // de pays à risque, on ajoute 60 points.
         if (RISK_COUNTRIES.contains(transaction.getCountry())) {
             triggeredRules.add("RISK_COUNTRY");
-            score += 60;
+            score += RISK_COUNTRY_POINTS;
         }
 
         // Règle 4 : montant rond inhabituel.
         // On vérifie que le montant est au moins de 10 000
         // et qu'il est un multiple de 5 000.
         // Exemple : 10 000, 15 000, 20 000...
-        if (transaction.getAmount() >= 10000
-                && transaction.getAmount() % 5000 == 0) {
+        if (transaction.getAmount() >= ROUND_MINIMUM
+                && transaction.getAmount() % ROUND_MULTIPLE == 0) {
             triggeredRules.add("ROUND_AMOUNT");
-            score += 15;
+            score += ROUND_AMOUNT_POINTS;
         }
 
         // Règle 5 : utilisation d'une devise étrangère.
@@ -70,7 +106,7 @@ public class ScoringEngine {
         // on ajoute 20 points comme indicateur de risque complémentaire.
         if (FOREIGN_CURRENCIES.contains(transaction.getCurrency())) {
             triggeredRules.add("FOREIGN_CURRENCY");
-            score += 20;
+            score += FOREIGN_CURRENCY_POINTS;
         }
 
         // Le score final est limité à 100.

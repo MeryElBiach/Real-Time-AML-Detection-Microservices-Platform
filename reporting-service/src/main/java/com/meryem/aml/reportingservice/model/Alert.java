@@ -1,6 +1,7 @@
 package com.meryem.aml.reportingservice.model;
 
 import java.time.LocalDateTime;
+import com.meryem.aml.alertsservice.entity.AlertStatus;
 
 public class Alert {
 
@@ -13,7 +14,11 @@ public class Alert {
     private int riskScore;
     private String triggeredRules;
     private LocalDateTime createdAt;
-    private String status;
+    private AlertStatus status;
+    private long statusVersion;
+
+    public long getStatusVersion() { return statusVersion; }
+    public void setStatusVersion(long statusVersion) { this.statusVersion = statusVersion; }
 
     public Alert() {
     }
@@ -90,11 +95,11 @@ public class Alert {
         this.createdAt = createdAt;
     }
 
-    public String getStatus() {
+    public AlertStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(AlertStatus status) {
         this.status = status;
     }
 }

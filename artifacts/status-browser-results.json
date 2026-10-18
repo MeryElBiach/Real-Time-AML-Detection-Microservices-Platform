@@ -1,0 +1,82 @@
+{
+  "transitions": [
+    {
+      "status": "CONFIRMED",
+      "reportId": "10513",
+      "version": 4,
+      "distribution": {
+        "PENDING": 15254,
+        "CONFIRMED": 1,
+        "FALSE_POSITIVE": 0
+      },
+      "day": {
+        "date": "01 Aug",
+        "pending": 193,
+        "confirmed": 1,
+        "falsePositive": 0
+      }
+    },
+    {
+      "status": "FALSE_POSITIVE",
+      "reportId": "10513",
+      "version": 5,
+      "distribution": {
+        "PENDING": 15254,
+        "CONFIRMED": 0,
+        "FALSE_POSITIVE": 1
+      },
+      "day": {
+        "date": "01 Aug",
+        "pending": 193,
+        "confirmed": 0,
+        "falsePositive": 1
+      }
+    },
+    {
+      "status": "PENDING",
+      "reportId": "10513",
+      "version": 6,
+      "distribution": {
+        "PENDING": 15256,
+        "CONFIRMED": 0,
+        "FALSE_POSITIVE": 0
+      },
+      "day": {
+        "date": "01 Aug",
+        "pending": 194,
+        "confirmed": 0,
+        "falsePositive": 0
+      }
+    }
+  ],
+  "browserErrors": [],
+  "requests": [
+    {
+      "status": 200,
+      "body": "\"CONFIRMED\""
+    },
+    {
+      "status": 200,
+      "body": "\"FALSE_POSITIVE\""
+    },
+    {
+      "status": 200,
+      "body": "\"PENDING\""
+    },
+    {
+      "status": 503,
+      "body": "\"CONFIRMED\""
+    }
+  ],
+  "alertId": 1,
+  "unauthenticated": 401,
+  "auditorRead": 200,
+  "auditorWrite": 403,
+  "invalidStatus": 400,
+  "nullStatus": 400,
+  "missingAlert": 404,
+  "staleReplay": "passed",
+  "failedRequest": "passed",
+  "reload": "passed",
+  "result": "passed"
+}

@@ -118,7 +118,9 @@
         condition: service_healthy
 
   alerts-service:
-    build: ./alerts-service
+    build:
+      context: .
+      dockerfile: alerts-service/Dockerfile
     container_name: alerts-service
     ports:
       - "8084:8084"
@@ -133,7 +135,9 @@
         condition: service_healthy
 
   reporting-service:
-    build: ./reporting-service
+    build:
+      context: .
+      dockerfile: reporting-service/Dockerfile
     container_name: reporting-service
     ports:
       - "8085:8085"

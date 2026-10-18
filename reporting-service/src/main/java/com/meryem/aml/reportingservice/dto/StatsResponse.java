@@ -1,5 +1,6 @@
 package com.meryem.aml.reportingservice.dto;
 
+import java.util.List;
 import java.util.Map;
 
 public class StatsResponse {
@@ -10,19 +11,36 @@ public class StatsResponse {
     private double averageRiskScore;
     private long highRiskAlerts;
 
+    private Map<String, Long> riskScoreDistribution;
+    private List<TimeSeriesPoint> timeSeries;
+    private Map<String, Long> statusDistribution;
+    private List<StatusTimeSeriesPoint> statusTimeSeries;
+
     public StatsResponse(
             long totalAlerts,
             Map<String, Long> alertsByRule,
             Map<String, Long> alertsByCountry,
             double averageRiskScore,
-            long highRiskAlerts) {
+            long highRiskAlerts,
+            Map<String, Long> riskScoreDistribution,
+            List<TimeSeriesPoint> timeSeries,
+            Map<String, Long> statusDistribution,
+            List<StatusTimeSeriesPoint> statusTimeSeries) {
 
         this.totalAlerts = totalAlerts;
         this.alertsByRule = alertsByRule;
         this.alertsByCountry = alertsByCountry;
         this.averageRiskScore = averageRiskScore;
         this.highRiskAlerts = highRiskAlerts;
+        this.riskScoreDistribution = riskScoreDistribution;
+        this.timeSeries = timeSeries;
+        this.statusDistribution = statusDistribution;
+        this.statusTimeSeries = statusTimeSeries;
     }
+
+    public Map<String, Long> getStatusDistribution() { return statusDistribution; }
+
+    public List<StatusTimeSeriesPoint> getStatusTimeSeries() { return statusTimeSeries; }
 
     public long getTotalAlerts() {
         return totalAlerts;
@@ -42,5 +60,13 @@ public class StatsResponse {
 
     public long getHighRiskAlerts() {
         return highRiskAlerts;
+    }
+
+    public Map<String, Long> getRiskScoreDistribution() {
+        return riskScoreDistribution;
+    }
+
+    public List<TimeSeriesPoint> getTimeSeries() {
+        return timeSeries;
     }
 }

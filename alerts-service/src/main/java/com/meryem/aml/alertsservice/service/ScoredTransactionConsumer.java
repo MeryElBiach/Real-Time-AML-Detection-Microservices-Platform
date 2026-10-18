@@ -5,7 +5,6 @@ import com.meryem.aml.alertsservice.entity.AlertStatus;
 import com.meryem.aml.alertsservice.model.ScoredTransaction;
 import com.meryem.aml.alertsservice.repository.AlertRepository;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -16,12 +15,12 @@ public class ScoredTransactionConsumer {
     private static final int ALERT_THRESHOLD = 50;
 
     private final AlertRepository alertRepository;
-    private final KafkaTemplate<String, Alert> kafkaTemplate;
+    private final AlertPublisher alertPublisher;
 
     public ScoredTransactionConsumer(AlertRepository alertRepository,
-                                     KafkaTemplate<String, Alert> kafkaTemplate) {
+                                     AlertPublisher alertPublisher) {
         this.alertRepository = alertRepository;
-        this.kafkaTemplate = kafkaTemplate;
+        this.alertPublisher = alertPublisher;
     }
 
     @KafkaListener(topics = "scored-transactions", groupId = "alerts-service-group")
@@ -41,6 +40,6 @@ public class ScoredTransactionConsumer {
         alert.setCreatedAt(LocalDateTime.now());
         alert.setStatus(AlertStatus.PENDING);
         Alert saved = alertRepository.save(alert);
-        kafkaTemplate.send("alerts", saved.getTransactionId(), saved);
+        alertPublisher.publish(saved);
     }
 }

@@ -42,12 +42,30 @@ export interface Alert {
   notes?: InvestigationNote[];
 }
 
+export interface TimeSeriesPoint {
+  date: string;
+  alerts: number;
+}
+
+export interface StatusTimeSeriesPoint {
+  date: string;
+  pending: number;
+  confirmed: number;
+  falsePositive: number;
+}
+
 export interface StatsResponse {
   totalAlerts: number;
   alertsByRule: Record<string, number>;
   alertsByCountry: Record<string, number>;
   averageRiskScore: number;
   highRiskAlerts: number;
+
+  riskScoreDistribution: Record<string, number>;
+  timeSeries: TimeSeriesPoint[];
+  statusDistribution: Record<AlertStatus, number>;
+  statusTimeSeries: StatusTimeSeriesPoint[];
+
   alertsToday?: number;
 }
 
@@ -66,4 +84,21 @@ export interface UserSession {
   name: string;
   role: string;
   institution: string;
+}
+export interface EvaluationRequest {
+  amount: number;
+  currency: string;
+  country: string;
+}
+
+export interface RuleEvaluation {
+  code: RuleCode;
+  triggered: boolean;
+  contribution: number;
+}
+
+export interface EvaluationResponse {
+  riskScore: number;
+  triggeredRules: RuleCode[];
+  ruleEvaluations: RuleEvaluation[];
 }

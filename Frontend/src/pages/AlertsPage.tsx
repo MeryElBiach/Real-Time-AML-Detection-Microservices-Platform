@@ -12,7 +12,6 @@ import {
 } from "lucide-react";
 import type { Alert } from "../types";
 import { AML_RULES } from "../data/mockData";
-import { getAlerts } from "../api/alertsApi";
 import {
   formatCurrency,
   formatShortDate,
@@ -25,6 +24,9 @@ import { exportAlertsToCsv } from "../utils/exportCsv";
 import { SkeletonTable } from "../components/SkeletonLoader";
 
 interface AlertsPageProps {
+  alerts: Alert[];
+  isLoading: boolean;
+  error: string | null;
   onSelectAlert: (alert: Alert) => void;
 }
 
@@ -33,10 +35,10 @@ type SortOrder = "asc" | "desc";
 
 export const AlertsPage: React.FC<AlertsPageProps> = ({
   onSelectAlert,
+  alerts,
+  isLoading,
+  error,
 }) => {
-  const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   // Search and Filter States
   const [searchTerm, setSearchTerm] = useState("");
@@ -52,31 +54,7 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({
   const [sortOrder, setSortOrder] =
     useState<SortOrder>("desc");
 
-  // Load real alerts from backend
-  const loadAlerts = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const data = await getAlerts();
-
-      setAlerts(data);
-    } catch (err) {
-      console.error("Failed to load alerts:", err);
-
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Failed to load alerts");
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadAlerts();
-  }, []);
+  // Load real alerts from backend through the shared App state.
 
   // Unique countries from alert dataset
   const availableCountries = useMemo(() => {

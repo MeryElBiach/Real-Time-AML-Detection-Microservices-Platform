@@ -9,15 +9,11 @@ import {
   XCircle,
   Clock,
   Globe2,
-  ShieldAlert,
 } from "lucide-react";
 
 import type { StatsResponse } from "../types";
 
 import {
-  MOCK_SCORE_DISTRIBUTION,
-  MOCK_STATUS_DISTRIBUTION,
-  MOCK_TIME_SERIES,
   AML_RULES,
 } from "../data/mockData";
 
@@ -34,7 +30,8 @@ export const ReportingPage: React.FC<ReportingPageProps> = ({
   stats,
   isLoading = false,
 }) => {
-  const [timeRange, setTimeRange] = useState<"14d" | "30d" | "90d">("14d");
+  const [timeRange, setTimeRange] =
+    useState<"14d" | "30d" | "90d">("14d");
 
   if (isLoading) {
     return (
@@ -66,23 +63,25 @@ export const ReportingPage: React.FC<ReportingPageProps> = ({
     1
   );
 
-  // ============================================================
-  // SIMULATION DATA
-  //
-  // These statistics are not provided by the current backend API.
-  // They remain visible as simulation data until the Reporting
-  // Service exposes these metrics.
-  // ============================================================
+  const statusSeries = stats.statusTimeSeries.slice(-15).map((point) => ({
+    ...point, alerts: point.pending + point.confirmed + point.falsePositive,
+  }));
+  const maxStatusSeriesAlerts = Math.max(...statusSeries.map((point) => point.alerts), 1);
+  const statusPresentation = [
+    { status: "PENDING" as const, label: "Pending Investigation", color: "#f59e0b" },
+    { status: "CONFIRMED" as const, label: "Confirmed AML Alert", color: "#ef4444" },
+    { status: "FALSE_POSITIVE" as const, label: "Resolved False Positive", color: "#10b981" },
+  ];
+  const totalStatusCases = Object.values(stats.statusDistribution).reduce((sum, count) => sum + count, 0);
+  const statusDistribution = statusPresentation.map((item) => ({
+    ...item,
+    count: stats.statusDistribution[item.status],
+    percentage: totalStatusCases ? ((stats.statusDistribution[item.status] / totalStatusCases) * 100).toFixed(1) : "0.0",
+  }));
 
-  const maxTimeSeriesAlerts = Math.max(
-    ...MOCK_TIME_SERIES.map((d) => d.alerts),
-    1
-  );
-
-  const totalScoreCases = MOCK_SCORE_DISTRIBUTION.reduce(
-    (acc, cur) => acc + cur.count,
-    0
-  );
+  const totalScoreCases = Object.values(
+    stats.riskScoreDistribution
+  ).reduce((acc, count) => acc + count, 0);
 
   return (
     <div className="p-6 lg:p-8 space-y-8 max-w-7xl mx-auto">
@@ -92,6 +91,7 @@ export const ReportingPage: React.FC<ReportingPageProps> = ({
           ============================================================ */}
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+
         <div>
           <h2 className="text-xl font-bold tracking-tight text-white flex items-center gap-2.5">
             <BarChart3 className="w-5 h-5 text-blue-400" />
@@ -151,6 +151,7 @@ export const ReportingPage: React.FC<ReportingPageProps> = ({
         {/* TOTAL ALERTS */}
 
         <div className="p-4 rounded-xl bg-slate-900/50 border border-slate-800">
+
           <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
             Total Monitored Alerts
           </div>
@@ -162,11 +163,13 @@ export const ReportingPage: React.FC<ReportingPageProps> = ({
           <div className="text-[11px] text-slate-400 mt-1">
             Cumulative across active rules
           </div>
+
         </div>
 
         {/* AVERAGE RISK SCORE */}
 
         <div className="p-4 rounded-xl bg-slate-900/50 border border-slate-800">
+
           <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
             Mean AML Risk Score
           </div>
@@ -181,11 +184,13 @@ export const ReportingPage: React.FC<ReportingPageProps> = ({
           <div className="text-[11px] text-slate-400 mt-1">
             Calculated from monitored alerts
           </div>
+
         </div>
 
         {/* HIGH-RISK ALERTS */}
 
         <div className="p-4 rounded-xl bg-slate-900/50 border border-amber-500/20">
+
           <div className="text-[11px] font-semibold text-amber-300 uppercase tracking-wider">
             High-Risk Alerts
           </div>
@@ -197,11 +202,13 @@ export const ReportingPage: React.FC<ReportingPageProps> = ({
           <div className="text-[11px] text-slate-400 mt-1">
             Risk score ≥ 50
           </div>
+
         </div>
 
         {/* ACTIVE AML RULES */}
 
         <div className="p-4 rounded-xl bg-slate-900/50 border border-slate-800">
+
           <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
             Active AML Rules
           </div>
@@ -213,12 +220,13 @@ export const ReportingPage: React.FC<ReportingPageProps> = ({
           <div className="text-[11px] text-slate-400 mt-1">
             Detection heuristics configured
           </div>
+
         </div>
 
       </section>
 
       {/* ============================================================
-          CHART ROW 1: TIME SERIES
+          CHART ROW 1: REAL STATUS TIME SERIES
           ============================================================ */}
 
       <section className="p-6 rounded-xl bg-slate-900/50 border border-slate-800 space-y-4">
@@ -230,12 +238,12 @@ export const ReportingPage: React.FC<ReportingPageProps> = ({
               <TrendingUp className="w-4 h-4 text-blue-400" />
 
               <span>
-                Simulated Daily AML Alert Inflow
+                Daily AML Alert Inflow (Last 15 Days)
               </span>
             </h3>
 
             <p className="text-xs text-slate-400 mt-0.5">
-              Historical demonstration dataset — not provided by the current API
+              Historical alert volume with investigation status breakdown
             </p>
           </div>
 
@@ -269,21 +277,21 @@ export const ReportingPage: React.FC<ReportingPageProps> = ({
 
           <div className="h-56 flex items-end justify-between gap-2 sm:gap-3 px-2 border-b border-slate-800">
 
-            {MOCK_TIME_SERIES.map((item, index) => {
+            {statusSeries.map((item, index) => {
 
               const totalHeightPercent =
-                (item.alerts / (maxTimeSeriesAlerts * 1.15)) * 100;
+                (item.alerts / (maxStatusSeriesAlerts * 1.15)) * 100;
 
               const confirmedH =
-                (item.confirmed / item.alerts) *
+                (item.confirmed / (item.alerts || 1)) *
                 totalHeightPercent;
 
               const fpH =
-                (item.falsePositive / item.alerts) *
+                (item.falsePositive / (item.alerts || 1)) *
                 totalHeightPercent;
 
               const pendingH =
-                (item.pending / item.alerts) *
+                (item.pending / (item.alerts || 1)) *
                 totalHeightPercent;
 
               return (
@@ -323,21 +331,21 @@ export const ReportingPage: React.FC<ReportingPageProps> = ({
 
                     <div
                       style={{
-                        height: `${(pendingH / totalHeightPercent) * 100}%`,
+                        height: `${totalHeightPercent ? (pendingH / totalHeightPercent) * 100 : 0}%`,
                       }}
                       className="w-full bg-amber-500/90"
                     />
 
                     <div
                       style={{
-                        height: `${(fpH / totalHeightPercent) * 100}%`,
+                        height: `${totalHeightPercent ? (fpH / totalHeightPercent) * 100 : 0}%`,
                       }}
                       className="w-full bg-emerald-500/90"
                     />
 
                     <div
                       style={{
-                        height: `${(confirmedH / totalHeightPercent) * 100}%`,
+                        height: `${totalHeightPercent ? (confirmedH / totalHeightPercent) * 100 : 0}%`,
                       }}
                       className="w-full bg-rose-500/90"
                     />
@@ -356,11 +364,11 @@ export const ReportingPage: React.FC<ReportingPageProps> = ({
 
           <div className="flex justify-between items-center text-[10px] text-slate-400 px-2 pt-2">
             <span>
-              Historical time series model
+              Last 15 available alert dates
             </span>
 
             <span>
-              Simulation Demonstration Dataset
+              Reporting Service
             </span>
           </div>
 
@@ -382,79 +390,80 @@ export const ReportingPage: React.FC<ReportingPageProps> = ({
         >
 
           <div>
+
             <h3 className="text-sm font-bold text-white tracking-tight flex items-center gap-2">
+
               <Activity className="w-4 h-4 text-amber-400" />
 
               <span>
-                Simulated Risk Score Distribution
+                Risk Score Distribution
               </span>
+
             </h3>
 
             <p className="text-xs text-slate-400 mt-0.5">
-              Demonstration dataset — score distribution is not yet provided by the API
+              Real-time score distribution from the Reporting Service
             </p>
+
           </div>
 
           <div className="space-y-3 pt-2">
 
-            {MOCK_SCORE_DISTRIBUTION.map((item, idx) => {
+            {Object.entries(stats.riskScoreDistribution).map(
+              ([range, count]) => {
 
-              const pct = Math.round(
-                (item.count / totalScoreCases) * 100
-              );
+                const pct =
+                  totalScoreCases > 0
+                    ? Math.round((count / totalScoreCases) * 100)
+                    : 0;
 
-              return (
-                <div
-                  key={idx}
-                  className="space-y-1"
-                >
+                return (
+                  <div
+                    key={range}
+                    className="space-y-1"
+                  >
 
-                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center justify-between text-xs">
 
-                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2">
 
-                      <span
-                        className="w-2.5 h-2.5 rounded-full"
+                        <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+
+                        <span className="text-slate-200 font-medium">
+                          {range}
+                        </span>
+
+                      </div>
+
+                      <div className="font-mono text-slate-300">
+
+                        <span className="font-bold">
+                          {count.toLocaleString()}
+                        </span>{" "}
+
+                        <span className="text-slate-400 text-[11px]">
+                          ({pct}%)
+                        </span>
+
+                      </div>
+
+                    </div>
+
+                    <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
+
+                      <div
+                        className="h-full rounded-full transition-all duration-700 bg-amber-400"
                         style={{
-                          backgroundColor: item.color,
+                          width: `${pct}%`,
                         }}
                       />
 
-                      <span className="text-slate-200 font-medium">
-                        {item.range}
-                      </span>
-
-                    </div>
-
-                    <div className="font-mono text-slate-300">
-
-                      <span className="font-bold">
-                        {item.count}
-                      </span>{" "}
-
-                      <span className="text-slate-400 text-[11px]">
-                        ({pct}%)
-                      </span>
-
                     </div>
 
                   </div>
-
-                  <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
-
-                    <div
-                      className="h-full rounded-full transition-all duration-700"
-                      style={{
-                        width: `${pct}%`,
-                        backgroundColor: item.color,
-                      }}
-                    />
-
-                  </div>
-
-                </div>
-              );
-            })}
+                );
+              }
+            )}
 
           </div>
 
@@ -468,22 +477,26 @@ export const ReportingPage: React.FC<ReportingPageProps> = ({
         >
 
           <div>
+
             <h3 className="text-sm font-bold text-white tracking-tight flex items-center gap-2">
+
               <PieChart className="w-4 h-4 text-emerald-400" />
 
               <span>
-                Simulated Alert Status Resolution
+                Alert Status Resolution
               </span>
+
             </h3>
 
             <p className="text-xs text-slate-400 mt-0.5">
-              Demonstration dataset — status distribution is not yet provided by the Reporting API
+              Current investigation statuses from the Reporting Service
             </p>
+
           </div>
 
           <div className="space-y-3.5 pt-2">
 
-            {MOCK_STATUS_DISTRIBUTION.map((item) => (
+            {statusDistribution.map((item) => (
 
               <div
                 key={item.status}
@@ -624,10 +637,13 @@ export const ReportingPage: React.FC<ReportingPageProps> = ({
                     </div>
 
                     <span className="font-mono font-bold text-xs text-white">
+
                       {count.toLocaleString()}{" "}
+
                       <span className="text-slate-400 font-normal">
                         cases
                       </span>
+
                     </span>
 
                   </div>
