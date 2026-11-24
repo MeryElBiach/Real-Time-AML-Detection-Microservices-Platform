@@ -105,7 +105,9 @@
         condition: service_healthy
 
   scoring-service:
-    build: ./scoring-service
+    build:
+      context: .
+      dockerfile: scoring-service/Dockerfile
     container_name: scoring-service
     ports:
       - "8083:8083"

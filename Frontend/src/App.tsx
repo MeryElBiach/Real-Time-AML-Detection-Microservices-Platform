@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type {
   UserSession,
   Alert,
@@ -8,7 +8,7 @@ import type {
 
 import { MOCK_USER } from "./data/mockData";
 
-import { getAlerts, updateAlertStatus } from "./api/alertsApi";
+import { getAlert, getAlerts, updateAlertStatus } from "./api/alertsApi";
 import { getReportStats } from "./api/reportsApi";
 
 import { Sidebar } from "./components/Sidebar";
@@ -51,6 +51,38 @@ export default function App() {
 
   // Investigation Drawer State
   const [selectedAlert, setSelectedAlert] = useState<Alert | null>(null);
+  const [isDetailLoading, setIsDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState<string | null>(null);
+  const detailRequest = useRef<AbortController | null>(null);
+
+  const handleSelectAlert = async (alert: Alert) => {
+    detailRequest.current?.abort();
+    const controller = new AbortController();
+    detailRequest.current = controller;
+    setSelectedAlert(alert);
+    setIsDetailLoading(true);
+    setDetailError(null);
+    try {
+      const detail = await getAlert(alert.id, controller.signal);
+      if (detailRequest.current === controller) {
+        setSelectedAlert((previous) => previous?.id === detail.id ? { ...previous, ...detail } : previous);
+      }
+    } catch (error) {
+      if (!controller.signal.aborted && detailRequest.current === controller) {
+        setDetailError(error instanceof Error ? error.message : "Unable to load alert details.");
+      }
+    } finally {
+      if (detailRequest.current === controller) setIsDetailLoading(false);
+    }
+  };
+
+  const handleCloseAlert = () => {
+    detailRequest.current?.abort();
+    detailRequest.current = null;
+    setSelectedAlert(null);
+    setIsDetailLoading(false);
+    setDetailError(null);
+  };
 
   // Load real AML data from the backend
   useEffect(() => {
@@ -259,6 +291,7 @@ export default function App() {
           }}
           user={currentUser}
           onLogout={() => {
+            handleCloseAlert();
             localStorage.removeItem("aml_token");
             sessionStorage.removeItem("aml_token");
             setCurrentUser(null);
@@ -284,9 +317,7 @@ export default function App() {
                 <DashboardPage
                   stats={stats}
                   alerts={alerts}
-                  onSelectAlert={(alert) =>
-                    setSelectedAlert(alert)
-                  }
+                  onSelectAlert={handleSelectAlert}
                   onNavigateToAlerts={() =>
                     setCurrentTab("alerts")
                   }
@@ -306,9 +337,7 @@ export default function App() {
               alerts={alerts}
               isLoading={isLoading}
               error={dataError}
-              onSelectAlert={(alert) =>
-                setSelectedAlert(alert)
-              }
+              onSelectAlert={handleSelectAlert}
             />
           )}
 
@@ -338,7 +367,10 @@ export default function App() {
         key={selectedAlert?.id ?? "closed"}
         alert={selectedAlert}
         isOpen={Boolean(selectedAlert)}
-        onClose={() => setSelectedAlert(null)}
+        onClose={handleCloseAlert}
+        isDetailLoading={isDetailLoading}
+        detailError={detailError}
+        onRetryDetail={() => { if (selectedAlert) void handleSelectAlert(selectedAlert); }}
         onUpdateStatus={handleUpdateStatus}
         onAddNote={handleAddNote}
       />

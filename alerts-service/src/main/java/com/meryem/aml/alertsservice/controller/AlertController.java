@@ -33,6 +33,7 @@ public class AlertController {
     }
 
     @PutMapping("/{id}/status")
+    // Only investigation state is editable; scoring facts stay as originally recorded.
     public Alert updateStatus(@PathVariable Long id, @RequestBody AlertStatus status) {
         if (status == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Status is required");
@@ -43,5 +44,11 @@ public class AlertController {
         Alert saved = alertRepository.save(alert);
         alertPublisher.publish(saved);
         return saved;
+    }
+
+    @GetMapping("/{id}")
+    public Alert getAlert(@PathVariable Long id) {
+        return alertRepository.findById(id).orElseThrow(() ->
+                new ResponseStatusException(HttpStatus.NOT_FOUND, "Alert not found"));
     }
 }

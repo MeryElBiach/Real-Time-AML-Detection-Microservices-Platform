@@ -13,6 +13,8 @@ export function exportAlertsToCsv(alerts: Alert[], filename: string = "sentinel_
         "Triggered Rules",
         "Status",
         "Created At",
+        "Transaction Timestamp",
+        "Scoring Version",
     ];
 
     const rows = alerts.map((a) => [
@@ -21,12 +23,14 @@ export function exportAlertsToCsv(alerts: Alert[], filename: string = "sentinel_
         `"${a.fromAccount}"`,
         `"${a.toAccount}"`,
         a.amount,
-        `"${a.currency || "MAD"}"`,
+        `"${a.currency || ""}"`,
         `"${a.country}"`,
         a.riskScore,
         `"${a.triggeredRules}"`,
         `"${a.status}"`,
         `"${a.createdAt}"`,
+        `"${a.transactionTimestamp || ""}"`,
+        `"${a.scoringVersion || ""}"`,
     ]);
 
     const csvContent =

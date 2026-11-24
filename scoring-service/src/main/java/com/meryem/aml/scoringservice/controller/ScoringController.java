@@ -1,6 +1,7 @@
 package com.meryem.aml.scoringservice.controller;
 
 import com.meryem.aml.scoringservice.model.Transaction;
+import com.meryem.aml.contracts.scoring.RuleHit;
 import com.meryem.aml.scoringservice.service.ScoringEngine;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -40,10 +41,12 @@ public class ScoringController {
             boolean triggered = scored.getTriggeredRules().contains(rule.code());
             return new RuleEvaluation(rule.code(), triggered, triggered ? rule.scoreContribution() : 0);
         }).toList();
-        return ResponseEntity.ok(new ScoringResponse(scored.getRiskScore(), scored.getTriggeredRules(), evaluations));
+        return ResponseEntity.ok(new ScoringResponse(scored.getRiskScore(), scored.getTriggeredRules(), evaluations,
+                scored.getRuleHits(), scored.getScoringVersion()));
     }
 
     public record ScoringRequest(Double amount, String currency, String country) {}
     public record RuleEvaluation(String code, boolean triggered, int contribution) {}
-    public record ScoringResponse(int riskScore, List<String> triggeredRules, List<RuleEvaluation> ruleEvaluations) {}
+    public record ScoringResponse(int riskScore, List<String> triggeredRules, List<RuleEvaluation> ruleEvaluations,
+                                  List<RuleHit> ruleHits, String scoringVersion) {}
 }

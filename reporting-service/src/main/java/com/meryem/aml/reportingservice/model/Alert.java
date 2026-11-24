@@ -1,8 +1,10 @@
 package com.meryem.aml.reportingservice.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.time.LocalDateTime;
 import com.meryem.aml.alertsservice.entity.AlertStatus;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Alert {
 
     private Long id;

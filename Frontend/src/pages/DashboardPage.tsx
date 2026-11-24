@@ -498,7 +498,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     <td className="py-3.5 px-4 font-mono font-semibold text-slate-200">
                       {formatCurrency(
                         alert.amount,
-                        alert.currency || "MAD"
+                        alert.currency
                       )}
                     </td>
 
