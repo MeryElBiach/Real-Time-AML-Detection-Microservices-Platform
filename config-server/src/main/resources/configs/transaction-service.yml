@@ -10,10 +10,52 @@ eureka:
 
 spring:
   kafka:
-    bootstrap-servers: kafka:9092 # c'est l'adresse à laquelle il va se connecter à Kafka
-    producer: # il configre le producteur
+    bootstrap-servers: kafka:9092
+
+    # Publication des transactions générées.
+    producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       properties:
-        spring.json.add.type.headers: false # il n'ajoute pas d'entêtes JSON
-        
+        spring.json.add.type.headers: false
+
+    # Lecture des transactions pour alimenter l'historique.
+    consumer:
+      # Groupe indépendant de celui du scoring.
+      group-id: transaction-history-group
+
+      # Au premier démarrage, lire les messages encore conservés.
+      auto-offset-reset: earliest
+
+      # La validation des offsets sera contrôlée par le listener.
+      enable-auto-commit: false
+
+      # Nombre maximal de messages récupérés par appel poll.
+      max-poll-records: 50
+
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+
+      properties:
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+        spring.json.value.default.type: com.meryem.aml.transactionservice.model.Transaction
+        spring.json.trusted.packages: com.meryem.aml.transactionservice.model
+        spring.json.use.type.headers: false
+
+  # Connexion depuis le conteneur transaction-service.
+  datasource:
+    url: jdbc:postgresql://postgres:5432/aml_db?currentSchema=history_schema
+    driver-class-name: org.postgresql.Driver
+    username: ${DB_USER:aml_user}
+    password: ${DB_PASSWORD:aml_password}
+
+    # Petit pool adapté à notre démonstration.
+    hikari:
+      maximum-pool-size: 3
+      minimum-idle: 1
+      connection-timeout: 10000
+
+app:
+  generator:
+    # Une nouvelle transaction par minute.
+    interval-ms: 60000

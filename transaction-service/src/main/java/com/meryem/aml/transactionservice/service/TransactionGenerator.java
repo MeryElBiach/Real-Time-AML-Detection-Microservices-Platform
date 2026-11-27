@@ -34,7 +34,7 @@ public class TransactionGenerator {
         this.kafkaTemplate = kafkaTemplate;
     }
 
-    @Scheduled(fixedRate = 2000)
+    @Scheduled(fixedRateString = "${app.generator.interval-ms:60000}")
     public void generateTransaction() {
 
         int pattern = random.nextInt(100);
