@@ -1,0 +1,19 @@
+# Communication avec notre serveur Qdrant.
+qdrant-client==1.20.0
+
+# Objet Document utilisé pour transporter le texte et ses métadonnées.
+langchain-core==1.4.0
+
+# Intégrations LangChain, dont le lecteur PyPDFLoader.
+langchain-community==0.4.1
+
+# Outils de découpage du texte.
+langchain-text-splitters==1.1.2
+
+# Extraction du texte des PDF, utilisée par PyPDFLoader.
+pypdf==6.11.0
+
+# Lecture des métadonnées et de notre catalogue YAML.
+PyYAML==6.0.3
+sentence-transformers==5.5.1
+pydantic==2.14.4

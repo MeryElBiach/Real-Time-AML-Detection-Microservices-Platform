@@ -1,0 +1,12 @@
+# Environnement Python installé sur ta machine.
+# Chaque développeur le recréera à partir des dépendances.
+.venv/
+
+# Fichiers générés automatiquement par Python.
+__pycache__/
+*.py[cod]
+
+# Configuration locale : elle ne doit pas être versionnée.
+.env
+# Aperçus générés localement.
+artifacts/
