@@ -549,7 +549,7 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({
                       <td className="py-3.5 px-4 font-mono font-semibold text-slate-100">
                         {formatCurrency(
                           alert.amount,
-                          alert.currency || "MAD"
+                          alert.currency
                         )}
                       </td>
 

@@ -27,13 +27,26 @@ export interface InvestigationNote {
   createdAt: string;
 }
 
+export type EvidenceValue = string | number | boolean | null | string[];
+
+export interface RuleHit {
+  code: RuleCode;
+  points: number;
+  ruleVersion: string;
+  evidence: Record<string, EvidenceValue>;
+}
+
 export interface Alert {
   id: number;
   transactionId: string;
   fromAccount: string;
   toAccount: string;
   amount: number;
-  currency?: string;
+  currency?: string | null;
+  transactionTimestamp?: string | null;
+  scoringVersion?: string | null;
+  ruleHits?: RuleHit[];
+  statusVersion?: number;
   country: string;
   riskScore: number;
   triggeredRules: string;
@@ -101,4 +114,6 @@ export interface EvaluationResponse {
   riskScore: number;
   triggeredRules: RuleCode[];
   ruleEvaluations: RuleEvaluation[];
+  ruleHits: RuleHit[];
+  scoringVersion: string;
 }

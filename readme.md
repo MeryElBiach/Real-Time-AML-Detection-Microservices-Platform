@@ -144,6 +144,73 @@ Actual ports depend on the project configuration.
 
 ##  Testing
 
+### Recorded scoring evidence for the investigation copilot
+
+The current preparation keeps all five scoring predicates and their weights unchanged
+(50, 50, 60, 15, 20), with a final score capped at 100. No LLM service or historical
+transaction rule is introduced in this change.
+
+`ScoredTransaction` now carries `scoringVersion` (`demo-v1`) and `ruleHits` alongside
+the existing `triggeredRules`. Each hit contains `code`, `points`, `ruleVersion` and
+a structured `evidence` object calculated by the scoring engine. Amounts inside the
+evidence are decimal strings, retaining input precision and showing at least two
+decimal places. Transaction models continue to use `double` in this version.
+
+Evidence records the nominal amount, currency, applied threshold or multiple,
+configured lists and the checks that were not performed. In particular:
+
+- `STRUCTURING_PATTERN` still matches exactly 9,900 on one transaction; it does not
+  inspect account history or establish repeated transfers.
+- Amount thresholds do not convert currencies.
+- The country list is a demonstration list, not an official sanctions check.
+- A foreign currency does not establish that a transfer crossed a border.
+- The score is a demonstration priority index, not a probability of money laundering.
+
+Alerts stores the original `ruleHits` as a JSONB array, together with `currency`,
+`transactionTimestamp` and `scoringVersion`. The transaction timestamp is copied
+from the incoming transaction; `createdAt` remains the alert creation time.
+Investigation status changes preserve these facts. Reporting continues consuming
+the existing fields and tolerates the added evidence fields.
+
+`GET /api/alerts/{id}` through the gateway returns the persisted alert and its
+evidence with the usual Bearer token; an unknown ID returns 404.
+`POST /api/scoring/evaluate` also returns `ruleHits` and `scoringVersion`, without
+publishing transactions or creating alerts. The frontend shows recorded evidence
+in the investigation drawer and current evidence in the rule tester. Currency is
+shown as unavailable when absent, including in historical alerts; it is not inferred
+as MAD. CSV exports also retain the transaction timestamp and scoring version.
+
+For legacy alerts, `ruleHits` is an empty array and missing provenance fields remain
+null. No historical facts are reconstructed from today's rules. A future copilot
+should read the detail endpoint, cite these stored facts, and explicitly identify
+missing evidence. A later rule change should use a new scoring version.
+
+The existing Hibernate `ddl-auto: update` setting adds the nullable columns on
+startup. An explicit, additive PostgreSQL migration is also available at
+`scripts/migrations/20261124-alert-evidence.sql`. It does not backfill or overwrite
+historical data. Rebuild Scoring, Alerts and Reporting together; Scoring now uses
+the repository root as its Docker build context to include `aml-contracts`.
+
+The root Maven reactor builds the shared contract before its consumers. Run the
+focused checks without requiring Kafka, Eureka, Config Server or PostgreSQL:
+
+```powershell
+mvn -B -pl scoring-service,alerts-service,reporting-service -am '-Dtest=ScoringRulesTest,ScoringEvidenceTest,AlertStatusTest,AlertEvidenceTest,AlertEvidencePersistenceTest,StatusReportingTest,ReportingEventCompatibilityTest' '-Dsurefire.failIfNoSpecifiedTests=false' test
+npm --prefix Frontend run build
+npm --prefix Frontend run lint
+node scripts/test-evidence-browser.cjs
+```
+
+The persistence test uses H2 in PostgreSQL compatibility mode, including JSON
+round-trips and status updates; it does not replace a deployment check against
+PostgreSQL. The browser test uses explicit API fixtures, starts its own Vite preview
+on port 5181 and checks new/legacy alerts, detail-load failures, retry, stale requests,
+the rule tester and mobile layout. It uses the same local Playwright installation
+as the existing browser scripts (`artifacts/browser-tools`) and Edge by default;
+`AML_BROWSER_PATH` can select another installed Chromium executable. Build the
+frontend before running it. Existing Spring `contextLoads` tests need their service
+infrastructure and are not included in the focused command above.
+
 The repository includes scripts for testing browser behavior and replaying alerts. Run them according to the instructions and dependencies defined in the project.
 
 For example, the repository contains:

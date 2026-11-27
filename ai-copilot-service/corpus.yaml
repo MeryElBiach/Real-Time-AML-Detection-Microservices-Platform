@@ -1,0 +1,34 @@
+# Les chemins sont relatifs à la racine AML-platform.
+markdown:
+  - docs/copilot/METHODOLOGIE-ANALYSE-HISTORIQUE.md
+  - docs/copilot/GUIDE-PISTES-INVESTIGATION.md
+
+pdf:
+  - path: "docs/sources/recommandations-du-gafi-2012.pdf.coredownload.pdf.pdf"
+
+    # Numéros physiques dans le lecteur PDF, première page = 1.
+    # Ils peuvent différer des numéros imprimés sur les pages.
+    pdf_pages: [17, 18, 81, 82, 83]
+
+    metadata:
+      doc_id: GAFI-REC-FR-2026-06
+      title: Recommandations du GAFI
+      version: "2026-06"
+      language: fr
+      source_type: official_reference
+      document_type: international_standard
+      regulatory_status: international_standard
+      source_url: "https://www.fatf-gafi.org/content/dam/fatf-gafi/recommendations/recommandations-du-gafi-2012.pdf.coredownload.pdf"
+
+  - path: "docs/sources/Circulaire n°5W2017 relative à l’obligation de vigilance incombant aux établissements de crédit et organismes assimilés.pdf"
+
+    # Sans pdf_pages, toutes les pages sont examinées.
+    # Notre copie nécessite un OCR : le loader le signalera.
+    metadata:
+      doc_id: BAM-5W2017-FR
+      title: Circulaire Bank Al-Maghrib n° 5/W/2017
+      version: "2017-base"
+      language: fr
+      source_type: official_reference
+      document_type: regulatory_text
+      regulatory_status: base_2017_not_consolidated

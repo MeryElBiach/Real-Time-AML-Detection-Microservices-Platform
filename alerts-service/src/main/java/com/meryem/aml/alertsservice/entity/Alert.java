@@ -8,8 +8,12 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Column;
 import jakarta.persistence.Version;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+import com.meryem.aml.contracts.scoring.RuleHit;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 public class Alert {
@@ -22,6 +26,13 @@ public class Alert {
     private String fromAccount;
     private String toAccount;
     private double amount;
+    private String currency;
+    private LocalDateTime transactionTimestamp;
+    private String scoringVersion;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private List<RuleHit> ruleHits;
     private String country;
     private int riskScore;
     private String triggeredRules;
@@ -36,6 +47,24 @@ public class Alert {
 
     public long getStatusVersion() {
         return statusVersion;
+    }
+
+    public String getCurrency() { return currency; }
+    public void setCurrency(String currency) { this.currency = currency; }
+
+    public LocalDateTime getTransactionTimestamp() { return transactionTimestamp; }
+    public void setTransactionTimestamp(LocalDateTime transactionTimestamp) {
+        this.transactionTimestamp = transactionTimestamp;
+    }
+
+    public String getScoringVersion() { return scoringVersion; }
+    public void setScoringVersion(String scoringVersion) { this.scoringVersion = scoringVersion; }
+
+    public List<RuleHit> getRuleHits() {
+        return ruleHits == null ? List.of() : List.copyOf(ruleHits);
+    }
+    public void setRuleHits(List<RuleHit> ruleHits) {
+        this.ruleHits = ruleHits == null ? null : List.copyOf(ruleHits);
     }
 
     public Alert() {

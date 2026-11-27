@@ -34,6 +34,10 @@ public class ScoredTransactionConsumer {
         alert.setFromAccount(scoredTransaction.getTransaction().getFromAccount());
         alert.setToAccount(scoredTransaction.getTransaction().getToAccount());
         alert.setAmount(scoredTransaction.getTransaction().getAmount());
+        alert.setCurrency(scoredTransaction.getTransaction().getCurrency());
+        alert.setTransactionTimestamp(scoredTransaction.getTransaction().getTimestamp());
+        alert.setScoringVersion(scoredTransaction.getScoringVersion());
+        alert.setRuleHits(scoredTransaction.getRuleHits());
         alert.setCountry(scoredTransaction.getTransaction().getCountry());
         alert.setRiskScore(scoredTransaction.getRiskScore());
         alert.setTriggeredRules(String.join(",", scoredTransaction.getTriggeredRules()));

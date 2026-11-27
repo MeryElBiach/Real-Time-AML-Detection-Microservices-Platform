@@ -39,3 +39,18 @@ export async function updateAlertStatus(id: number, status: AlertStatus): Promis
     }
     return response.json();
 }
+
+export async function getAlert(id: number, signal?: AbortSignal): Promise<Alert> {
+    const token = localStorage.getItem("aml_token") || sessionStorage.getItem("aml_token");
+    if (!token) throw new Error("No authentication token found");
+    const response = await fetch(`${API_BASE_URL}/alerts/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        signal,
+    });
+    if (!response.ok) {
+        throw new Error(response.status === 404
+            ? "This alert is no longer available. Refresh the alert list."
+            : "Unable to load the recorded alert details. Please try again.");
+    }
+    return response.json();
+}

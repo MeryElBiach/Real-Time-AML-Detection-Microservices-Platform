@@ -32,6 +32,11 @@
     </properties>
     <dependencies>
         <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>com.meryem.aml</groupId>
             <artifactId>aml-contracts</artifactId>
             <version>0.0.1-SNAPSHOT</version>

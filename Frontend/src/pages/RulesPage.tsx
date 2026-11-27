@@ -10,6 +10,7 @@ import type { AMLRuleDefinition, EvaluationResponse } from "../types";
 
 import { RuleBadge } from "../components/RuleBadge";
 import { RiskScoreBadge } from "../components/RiskScoreBadge";
+import { RuleEvidence } from "../components/RuleEvidence";
 
 export const RulesPage: React.FC = () => {
     // Interactive Rule Tester State
@@ -290,6 +291,11 @@ export const RulesPage: React.FC = () => {
                         </div>
                     </div>
                 </div>
+                {evaluation && <div className="space-y-3">
+                    <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Evidence from this evaluation</h3>
+                    <RuleEvidence hits={evaluation.ruleHits} scoringVersion={evaluation.scoringVersion}
+                        emptyMessage="No rules matched this transaction." />
+                </div>}
             </section>
         </div>
     );

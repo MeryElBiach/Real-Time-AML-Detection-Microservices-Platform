@@ -1,13 +1,19 @@
 package com.meryem.aml.scoringservice.service;
 import com.meryem.aml.scoringservice.model.ScoredTransaction;
 import com.meryem.aml.scoringservice.model.Transaction;
+import com.meryem.aml.contracts.scoring.RuleHit;
 import org.springframework.stereotype.Component;
+import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Component
 public class ScoringEngine {
+
+    public static final String SCORING_VERSION = "demo-v1";
 
 //le moteur de règles AML
     private static final double HIGH_AMOUNT_THRESHOLD = 100000;
@@ -38,7 +44,7 @@ public class ScoringEngine {
                 "amount >= " + (long) HIGH_AMOUNT_THRESHOLD, HIGH_AMOUNT_POINTS,
                 "Flags transactions at or above the configured amount threshold.", "Active",
                 "The threshold applies to the entered amount; this rule does not convert currencies."),
-            new RuleDefinition("STRUCTURING_PATTERN", "Structuring indicator",
+            new RuleDefinition("STRUCTURING_PATTERN", "Exact amount indicator",
                 "amount == " + (long) STRUCTURING_AMOUNT, STRUCTURING_POINTS,
                 "Matches the exact amount configured for this test rule.", "Active",
                 "This rule checks a single transaction. It does not detect a pattern across multiple transfers."),
@@ -58,69 +64,75 @@ public class ScoringEngine {
     }
 
     public ScoredTransaction score(Transaction transaction) {
+        if (transaction == null || !Double.isFinite(transaction.getAmount())
+                || transaction.getAmount() < 0 || transaction.getCurrency() == null
+                || transaction.getCountry() == null) {
+            throw new IllegalArgumentException("Scoring requires a finite non-negative amount, currency and country");
+        }
+        List<RuleHit> hits = new ArrayList<>();
 
-        // Cette liste contient les règles qui ont été déclenchées
-        // pour cette transaction.
-        List<String> triggeredRules = new ArrayList<>();
-
-        // Score initial de la transaction.
-        int score = 0;
-
-        // Règle 1 : montant très élevé.
-        // Si le montant est supérieur ou égal à 100 000,
-        // on considère cette transaction comme présentant
-        // un indicateur de risque lié au montant.
         if (transaction.getAmount() >= HIGH_AMOUNT_THRESHOLD) {
-            triggeredRules.add("HIGH_AMOUNT");
-            score += HIGH_AMOUNT_POINTS;
+            Map<String, Object> evidence = amountEvidence(transaction);
+            evidence.put("threshold", decimal(HIGH_AMOUNT_THRESHOLD));
+            evidence.put("comparison", ">=");
+            hits.add(hit("HIGH_AMOUNT", HIGH_AMOUNT_POINTS, evidence));
         }
 
-        // Règle 2 : pattern de structuring.
-        // Dans notre simulation, une transaction exactement égale
-        // à 9 900 est utilisée comme indicateur de structuring.
         if (transaction.getAmount() == STRUCTURING_AMOUNT) {
-            triggeredRules.add("STRUCTURING_PATTERN");
-            score += STRUCTURING_POINTS;
+            Map<String, Object> evidence = amountEvidence(transaction);
+            evidence.put("expectedAmount", decimal(STRUCTURING_AMOUNT));
+            evidence.put("comparison", "==");
+            evidence.put("historyEvaluated", false);
+            evidence.put("limitation", "An exact amount match on one transaction does not establish repeated transfers or structuring.");
+            hits.add(hit("STRUCTURING_PATTERN", STRUCTURING_POINTS, evidence));
         }
 
-        // Règle 3 : pays à risque.
-        // Si le pays de la transaction appartient à notre liste
-        // de pays à risque, on ajoute 60 points.
         if (RISK_COUNTRIES.contains(transaction.getCountry())) {
-            triggeredRules.add("RISK_COUNTRY");
-            score += RISK_COUNTRY_POINTS;
+            hits.add(hit("RISK_COUNTRY", RISK_COUNTRY_POINTS, Map.of(
+                    "country", transaction.getCountry(),
+                    "configuredCountries", RISK_COUNTRIES.stream().sorted().toList(),
+                    "listType", "SIMULATION",
+                    "officialSanctionsCheckPerformed", false)));
         }
 
-        // Règle 4 : montant rond inhabituel.
-        // On vérifie que le montant est au moins de 10 000
-        // et qu'il est un multiple de 5 000.
-        // Exemple : 10 000, 15 000, 20 000...
         if (transaction.getAmount() >= ROUND_MINIMUM
                 && transaction.getAmount() % ROUND_MULTIPLE == 0) {
-            triggeredRules.add("ROUND_AMOUNT");
-            score += ROUND_AMOUNT_POINTS;
+            Map<String, Object> evidence = amountEvidence(transaction);
+            evidence.put("minimumAmount", decimal(ROUND_MINIMUM));
+            evidence.put("multipleOf", decimal(ROUND_MULTIPLE));
+            evidence.put("historyEvaluated", false);
+            hits.add(hit("ROUND_AMOUNT", ROUND_AMOUNT_POINTS, evidence));
         }
 
-        // Règle 5 : utilisation d'une devise étrangère.
-        // Si la transaction est effectuée en EUR, USD ou GBP,
-        // on ajoute 20 points comme indicateur de risque complémentaire.
         if (FOREIGN_CURRENCIES.contains(transaction.getCurrency())) {
-            triggeredRules.add("FOREIGN_CURRENCY");
-            score += FOREIGN_CURRENCY_POINTS;
+            hits.add(hit("FOREIGN_CURRENCY", FOREIGN_CURRENCY_POINTS, Map.of(
+                    "currency", transaction.getCurrency(),
+                    "configuredCurrencies", FOREIGN_CURRENCIES.stream().sorted().toList(),
+                    "scope", "CURRENCY_ONLY",
+                    "crossBorderTransferVerified", false)));
         }
 
-        // Le score final est limité à 100.
-        // Même si plusieurs règles sont déclenchées,
-        // le score ne peut jamais dépasser 100.
-        int finalScore = Math.min(score, 100);
+        int score = Math.min(hits.stream().mapToInt(RuleHit::points).sum(), 100);
+        return new ScoredTransaction(transaction, score,
+                hits.stream().map(RuleHit::code).toList(), hits, SCORING_VERSION);
+    }
 
-        // On retourne la transaction originale avec son score
-        // et la liste des règles qui ont été déclenchées.
-        return new ScoredTransaction(
-                transaction,
-                finalScore,
-                triggeredRules
-        );
+    private RuleHit hit(String code, int points, Map<String, Object> evidence) {
+        return new RuleHit(code, points, SCORING_VERSION, evidence);
+    }
+
+    private Map<String, Object> amountEvidence(Transaction transaction) {
+        Map<String, Object> evidence = new LinkedHashMap<>();
+        evidence.put("amount", decimal(transaction.getAmount()));
+        evidence.put("currency", transaction.getCurrency());
+        evidence.put("scope", "SINGLE_TRANSACTION");
+        evidence.put("currencyConversionApplied", false);
+        return evidence;
+    }
+
+    private String decimal(double amount) {
+        BigDecimal value = BigDecimal.valueOf(amount);
+        return value.setScale(Math.max(2, value.scale())).toPlainString();
     }
 }
 

@@ -14,11 +14,11 @@ import {
   HelpCircle,
 } from "lucide-react";
 import type { Alert, AlertStatus } from "../types";
-import { AML_RULES, SIMULATION_RISK_COUNTRIES } from "../data/mockData";
-import { formatCurrency, formatDate, getCountryName } from "../utils/formatters";
+import { formatAmount, formatCurrency, formatDate, getCountryName } from "../utils/formatters";
 import { RiskScoreBadge } from "./RiskScoreBadge";
 import { StatusBadge } from "./StatusBadge";
 import { RuleBadge } from "./RuleBadge";
+import { RuleEvidence } from "./RuleEvidence";
 
 interface AlertDetailDrawerProps {
   alert: Alert | null;
@@ -26,6 +26,9 @@ interface AlertDetailDrawerProps {
   onClose: () => void;
   onUpdateStatus: (alertId: number, newStatus: AlertStatus) => Promise<void>;
   onAddNote: (alertId: number, noteText: string) => void;
+  isDetailLoading?: boolean;
+  detailError?: string | null;
+  onRetryDetail?: () => void;
 }
 
 export const AlertDetailDrawer: React.FC<AlertDetailDrawerProps> = ({
@@ -34,6 +37,9 @@ export const AlertDetailDrawer: React.FC<AlertDetailDrawerProps> = ({
   onClose,
   onUpdateStatus,
   onAddNote,
+  isDetailLoading = false,
+  detailError = null,
+  onRetryDetail,
 }) => {
   const [newNoteText, setNewNoteText] = useState("");
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
@@ -44,10 +50,10 @@ export const AlertDetailDrawer: React.FC<AlertDetailDrawerProps> = ({
   if (!isOpen || !alert) return null;
 
   const ruleCodes = alert.triggeredRules.split(",").map((r) => r.trim()).filter(Boolean);
-  const isSimulationRiskCountry = SIMULATION_RISK_COUNTRIES.includes(alert.country);
+  const isSimulationRiskCountry = ruleCodes.includes("RISK_COUNTRY");
 
   const handleStatusChange = async (status: AlertStatus) => {
-    if (isSaving) return;
+    if (isSaving || isDetailLoading || detailError) return;
     setIsSaving(true);
     setActionSuccess(null);
     setActionError(null);
@@ -151,13 +157,13 @@ export const AlertDetailDrawer: React.FC<AlertDetailDrawerProps> = ({
               <div>
                 <div className="text-[11px] text-slate-400">Total Transaction Amount</div>
                 <div className="text-2xl font-bold font-mono text-white mt-0.5">
-                  {formatCurrency(alert.amount, alert.currency || "MAD")}
+                  {alert.currency ? formatCurrency(alert.amount, alert.currency) : formatAmount(alert.amount)}
                 </div>
               </div>
               <div className="text-right">
                 <div className="text-[11px] text-slate-400">Operating Currency</div>
                 <div className="text-sm font-semibold font-mono text-blue-400 mt-0.5">
-                  {alert.currency || "MAD"}
+                  {alert.currency || "Unavailable"}
                 </div>
               </div>
             </div>
@@ -215,6 +221,11 @@ export const AlertDetailDrawer: React.FC<AlertDetailDrawerProps> = ({
                 </div>
               </div>
             </div>
+            <div className="text-xs text-slate-400">
+              Transaction timestamp: <span className="font-mono text-slate-200">
+                {alert.transactionTimestamp ? formatDate(alert.transactionTimestamp) : "Unavailable"}
+              </span>
+            </div>
           </div>
 
           {/* Section 3: Triggered AML Rules */}
@@ -224,41 +235,25 @@ export const AlertDetailDrawer: React.FC<AlertDetailDrawerProps> = ({
                 Triggered AML Rules ({ruleCodes.length})
               </h3>
               <span className="text-[11px] text-slate-400 font-medium">
-                Rule Engine Assessment
+                Recorded Rule Engine Assessment
               </span>
             </div>
 
-            <div className="space-y-2.5">
-              {ruleCodes.map((code) => {
-                const ruleDef = AML_RULES.find((r) => r.code === code);
-                return (
-                  <div
-                    key={code}
-                    className="p-3.5 rounded-lg bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition-colors"
-                  >
-                    <div className="flex items-center justify-between gap-2 mb-1.5">
-                      <div className="flex items-center gap-2">
-                        <RuleBadge code={code} size="md" />
-                        <span className="text-xs font-semibold text-slate-200">
-                          {ruleDef?.name || code}
-                        </span>
-                      </div>
-                      <span className="text-xs font-mono font-bold text-amber-400 bg-amber-950/40 border border-amber-800/30 px-2 py-0.5 rounded">
-                        +{ruleDef?.scoreContribution || 0} pts
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-300 mb-1">
-                      {ruleDef?.description}
-                    </p>
-                    {ruleDef?.simulationNote && (
-                      <p className="text-[11px] text-slate-400 italic">
-                        {ruleDef.simulationNote}
-                      </p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+            {isDetailLoading ? (
+              <p role="status" className="text-xs text-slate-400">Loading recorded evidence...</p>
+            ) : detailError ? (
+              <div role="alert" className="text-xs text-red-300 space-y-2">
+                <p>{detailError}</p>
+                <button onClick={onRetryDetail} className="text-blue-300 underline">Retry loading details</button>
+              </div>
+            ) : (
+              <>
+                {!alert.ruleHits?.length && <div className="flex flex-wrap gap-2 mb-3">
+                  {ruleCodes.map((code) => <RuleBadge key={code} code={code} showPoints={false} showTooltip={false} />)}
+                </div>}
+                <RuleEvidence hits={alert.ruleHits} scoringVersion={alert.scoringVersion} />
+              </>
+            )}
           </div>
 
           {/* Section 4: Investigation Workflow Actions */}
@@ -267,13 +262,13 @@ export const AlertDetailDrawer: React.FC<AlertDetailDrawerProps> = ({
               Analyst Investigation Decision
             </h3>
             <p className="text-xs text-slate-400 mb-3.5">
-              Select an investigation outcome to update the alert state in this prototype session.
+              Select an investigation outcome. The original scoring evidence is preserved.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               <button
                 id="btn-mark-confirmed"
-                disabled={isSaving}
+                disabled={isSaving || isDetailLoading || Boolean(detailError)}
                 onClick={() => handleStatusChange("CONFIRMED")}
                 className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-xs font-semibold border transition-all ${
                   alert.status === "CONFIRMED"
@@ -287,7 +282,7 @@ export const AlertDetailDrawer: React.FC<AlertDetailDrawerProps> = ({
 
               <button
                 id="btn-mark-false-positive"
-                disabled={isSaving}
+                disabled={isSaving || isDetailLoading || Boolean(detailError)}
                 onClick={() => handleStatusChange("FALSE_POSITIVE")}
                 className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-xs font-semibold border transition-all ${
                   alert.status === "FALSE_POSITIVE"
@@ -301,7 +296,7 @@ export const AlertDetailDrawer: React.FC<AlertDetailDrawerProps> = ({
 
               <button
                 id="btn-revert-pending"
-                disabled={isSaving}
+                disabled={isSaving || isDetailLoading || Boolean(detailError)}
                 onClick={() => handleStatusChange("PENDING")}
                 className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-xs font-semibold border transition-all ${
                   alert.status === "PENDING"

@@ -1,9 +1,17 @@
-export function formatCurrency(amount: number, currency: string = "MAD"): string {
+export function formatAmount(amount: number): string {
+    return new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 8 }).format(amount);
+}
+
+export function formatCurrency(amount: number, currency?: string | null): string {
+    if (!currency) {
+        return `${formatAmount(amount)} (currency unavailable)`;
+    }
     try {
         return new Intl.NumberFormat("en-US", {
             style: "currency",
-            currency: currency || "MAD",
-            maximumFractionDigits: 0,
+            currency,
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 8,
         }).format(amount);
     } catch {
         return `${amount.toLocaleString("en-US")} ${currency}`;

@@ -7,53 +7,39 @@ export const MOCK_USER: UserSession = {
   institution: "Banque Centrale & Partenaires Financiers",
 };
 
-export const SIMULATION_RISK_COUNTRIES = ["KP", "IR", "SY", "MM", "YE", "VE"];
+export const SIMULATION_RISK_COUNTRIES = ["KP", "IR", "SY"];
 
+// Presentation fallback only. Recorded ruleHits are the source for an alert's evidence.
 export const AML_RULES: AMLRuleDefinition[] = [
   {
-    code: "HIGH_AMOUNT",
-    name: "High Transaction Amount",
-    condition: "amount >= 100000",
-    scoreContribution: 50,
-    description: "Identifies transactions with an amount greater than or equal to 100,000.",
-    status: "Active",
-    simulationNote: "Indicateur standard de volume élevé nécessitant une vérification de la provenance des fonds.",
+    code: "HIGH_AMOUNT", name: "High amount", condition: "amount >= 100000",
+    scoreContribution: 50, status: "Active",
+    description: "Matches an amount at or above the configured demonstration threshold.",
+    simulationNote: "The threshold applies to the nominal amount without currency conversion.",
   },
   {
-    code: "STRUCTURING_PATTERN",
-    name: "Potential Structuring Threshold",
-    condition: "amount == 9900",
-    scoreContribution: 50,
-    description: "In this simulation, identifies a transaction with an amount exactly equal to 9,900.",
-    status: "Active",
-    simulationNote: "Simulation simplifiée d'un indicateur de structuring sous le seuil réglementaire de 10 000. Ne constitue pas à lui seul la preuve d'un fractionnement délibéré.",
+    code: "STRUCTURING_PATTERN", name: "Exact amount indicator", condition: "amount == 9900",
+    scoreContribution: 50, status: "Active",
+    description: "Matches the exact amount configured for this demonstration rule.",
+    simulationNote: "Checks one transaction; no account history or repeated transfer pattern is evaluated.",
   },
   {
-    code: "RISK_COUNTRY",
-    name: "Jurisdiction Risk Indicator",
-    condition: "country belongs to the simulation risk-country list",
-    scoreContribution: 60,
-    description: "Identifies transactions involving a country included in the simulation risk-country list.",
-    status: "Active",
-    simulationNote: "Liste simulée pour le prototype technique. Ne constitue pas une liste officielle ou réglementaire d'instances gouvernementales.",
+    code: "RISK_COUNTRY", name: "Country risk", condition: "country in [IR, KP, SY]",
+    scoreContribution: 60, status: "Active",
+    description: "Matches a country in the configured demonstration list.",
+    simulationNote: "This list is simulated and is not an official sanctions list.",
   },
   {
-    code: "ROUND_AMOUNT",
-    name: "Round Amount Heuristic",
-    condition: "amount >= 10000 AND amount is a multiple of 5000",
-    scoreContribution: 15,
-    description: "Identifies unusually round transaction amounts.",
-    status: "Active",
-    simulationNote: "Indicateur statistique d'arrondi fréquent dans les schémas non commerciaux sans justificatif d'achat.",
+    code: "ROUND_AMOUNT", name: "Round amount", condition: "amount >= 10000 AND amount % 5000 == 0",
+    scoreContribution: 15, status: "Active",
+    description: "Matches amounts meeting the configured minimum and multiple.",
+    simulationNote: "Checks the amount only; it does not establish unusual activity or payment purpose.",
   },
   {
-    code: "FOREIGN_CURRENCY",
-    name: "Cross-Border / Foreign Currency",
-    condition: "currency is EUR, USD or GBP",
-    scoreContribution: 20,
-    description: "Identifies transactions using a foreign currency.",
-    status: "Active",
-    simulationNote: "Indicateur complémentaire de risque de change et flux transfrontaliers. Une transaction en devise n'est évidemment pas nécessairement suspecte.",
+    code: "FOREIGN_CURRENCY", name: "Foreign currency", condition: "currency in [EUR, GBP, USD]",
+    scoreContribution: 20, status: "Active",
+    description: "Matches one of the configured foreign currencies.",
+    simulationNote: "Currency alone does not establish a cross-border transfer or suspicious activity.",
   },
 ];
 

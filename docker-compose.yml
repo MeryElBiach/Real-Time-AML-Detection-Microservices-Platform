@@ -103,9 +103,12 @@
         condition: service_healthy
       kafka:
         condition: service_healthy
-
+      postgres:
+        condition: service_healthy
   scoring-service:
-    build: ./scoring-service
+    build:
+      context: .
+      dockerfile: scoring-service/Dockerfile
     container_name: scoring-service
     ports:
       - "8083:8083"
@@ -151,5 +154,27 @@
       postgres:
         condition: service_healthy
 
+  qdrant:
+    # Version fixée pour retrouver le même comportement
+    # lorsque nous relançons le projet sur une autre machine.
+    image: qdrant/qdrant:v1.20.2
+    ports:
+      # Format : adresse_du_PC:port_du_PC:port_du_conteneur
+      # Python, lancé sur ton PC, contactera :
+      # http://localhost:6333
+      # 127.0.0.1 limite cet accès à ta machine.
+      - "127.0.0.1:6333:6333"
+
+    volumes:
+      # Les données de Qdrant seront conservées dans un volume Docker.
+      # Elles survivront au remplacement du conteneur.
+      # À gauche : nom du volume.
+      # À droite : dossier utilisé par Qdrant dans le conteneur.
+      - qdrant-data:/qdrant/storage
+    # Relance le conteneur après un redémarrage de Docker,
+    # sauf si tu l'as arrêté volontairement.
+    restart: unless-stopped
+
 volumes:
   postgres-data:
+  qdrant-data:
